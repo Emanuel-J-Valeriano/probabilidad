@@ -32,10 +32,45 @@ const App = {
   },
 
   initPWA() {
+    this.checkAppVersion();
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(err => console.warn(err));
+        navigator.serviceWorker.register('sw.js').then((reg) => {
+          reg.update();
+        }).catch(err => console.warn(err));
       });
+    }
+  },
+
+  checkAppVersion() {
+    const CURRENT_VERSION = 'v6_clean_formulas_2026';
+    const saved = localStorage.getItem('prob_app_version');
+    if (saved !== CURRENT_VERSION) {
+      localStorage.setItem('prob_app_version', CURRENT_VERSION);
+      if ('caches' in window) {
+        caches.keys().then(keys => {
+          return Promise.all(keys.map(k => {
+            if (k !== 'probabilidad-unju-v6') return caches.delete(k);
+          }));
+        });
+      }
+    }
+  },
+
+  forceRefreshApp() {
+    if ('caches' in window) {
+      caches.keys().then(names => Promise.all(names.map(name => caches.delete(name)))).then(() => {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(regs => {
+            regs.forEach(r => r.unregister());
+            window.location.reload(true);
+          });
+        } else {
+          window.location.reload(true);
+        }
+      });
+    } else {
+      window.location.reload(true);
     }
   },
 
@@ -186,7 +221,7 @@ const App = {
             X ~ B(n = 16, p = 0.30) con q = 1 - p = 0.70</div>
 
             <div class="sheet-step"><span class="step-num">3</span> <strong>Función de Probabilidad Puntual:</strong><br>
-            P(X = x) = C(n, x) · p^x · (1 - p)^(n - x)    para x = 0, 1, 2, ..., n</div>
+            P(X = x) = C(n, x) · pˣ · (1 - p)ⁿ⁻ˣ    para x = 0, 1, 2, ..., n</div>
 
             <div class="sheet-step"><span class="step-num">4</span> <strong>Sustitución Numérica para exactamente 4 alumnos P(X = 4):</strong><br>
             P(X = 4) = C(16, 4) · (0.30)⁴ · (0.70)¹² = 1820 · (0.0081) · (0.01384) = 0.2040 (20.40%)</div>
