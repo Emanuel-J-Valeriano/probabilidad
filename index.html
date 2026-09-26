@@ -18,15 +18,18 @@
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
   
-  <link rel="stylesheet" href="css/styles.css?v=20260926_6">
+  <link rel="stylesheet" href="css/styles.css?v=20260926_7">
   
   <script>
-    // Invalidate stale caches immediately
+    // Force unregister all service workers and wipe all caches
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        for (var r of regs) { r.unregister(); }
+      });
+    }
     if ('caches' in window) {
-      caches.keys().then(keys => {
-        keys.forEach(k => {
-          if (k !== 'probabilidad-unju-v6') caches.delete(k);
-        });
+      caches.keys().then(function(keys) {
+        for (var k of keys) { caches.delete(k); }
       });
     }
   </script>
@@ -220,9 +223,9 @@
   </div>
 
   <!-- Application Scripts with cache-busting -->
-  <script src="js/math-utils.js?v=20260926_6"></script>
-  <script src="js/solvers.js?v=20260926_6"></script>
-  <script src="js/exam-data.js?v=20260926_6"></script>
-  <script src="js/app.js?v=20260926_6"></script>
+  <script src="js/math-utils.js?v=20260926_7"></script>
+  <script src="js/solvers.js?v=20260926_7"></script>
+  <script src="js/exam-data.js?v=20260926_7"></script>
+  <script src="js/app.js?v=20260926_7"></script>
 </body>
 </html>
