@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="theme-color" content="#6366f1">
+  <meta name="description" content="Guía Teórica Oficial y Solucionador Paso a Paso de Parciales de Probabilidad y Estadística - Facultad de Ingeniería UNJu.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Probabilidad & Estadística - FI-UNJu | Teoría y Solucionador de Parciales</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icons/favicon.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Top App Bar Header -->
+  <header class="app-header">
+    <div class="brand" onclick="App.navigateTo('home')">
+      <div class="brand-icon">Ω</div>
+      <div class="brand-text">
+        <h1>Probabilidad & Estadística</h1>
+        <span>Facultad de Ingeniería • UNJu</span>
+      </div>
+    </div>
+
+    <!-- Desktop Navigation -->
+    <nav class="desktop-nav">
+      <a class="nav-link active" data-tab="home" onclick="App.navigateTo('home')">🏠 Inicio</a>
+      <a class="nav-link" data-tab="theory" onclick="App.navigateTo('theory')">📖 Teoría</a>
+      <a class="nav-link" data-tab="solvers" onclick="App.navigateTo('solvers')">🧮 Solucionador</a>
+      <a class="nav-link" data-tab="exams" onclick="App.navigateTo('exams')">📝 Parciales</a>
+      <a class="nav-link" data-tab="tables" onclick="App.navigateTo('tables')">📊 Tablas</a>
+    </nav>
+
+    <!-- Header Actions -->
+    <div class="header-actions">
+      <button class="btn-icon" id="themeToggleBtn" title="Cambiar tema (Oscuro/Claro)">🌓</button>
+      <button class="btn-icon" id="installBtn" style="display:none;" title="Instalar en el celular">📲</button>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="container">
+
+    <!-- ============================================================
+         TAB 1: INICIO (DASHBOARD)
+         ============================================================ -->
+    <section id="tab-home" class="tab-content active">
+      <div class="hero-banner">
+        <h2 class="hero-title">Teoría & Solucionador de Parciales</h2>
+        <p class="hero-desc">
+          Plataforma de estudio interactiva basada en el programa de <strong>Probabilidad y Estadística</strong> de la <strong>Facultad de Ingeniería (UNJu)</strong>. Resuelve al instante ejercicios de parciales con desarrollos paso a paso y gráficas en vivo.
+        </p>
+        <div class="hero-badges">
+          <span class="badge badge-primary">⚡ Resuelve Parciales Reales</span>
+          <span class="badge badge-success">📱 100% Optimizado Celular</span>
+          <span class="badge badge-warning">🌐 Funciona Offline (PWA)</span>
+          <span class="badge badge-secondary">📐 Fórmulas Cátedra UNJu</span>
+        </div>
+      </div>
+
+      <!-- Quick Action Cards Grid -->
+      <h3 class="mb-1">🚀 Solucionadores Rápidos</h3>
+      <div class="grid-cards">
+        
+        <div class="feature-card" onclick="App.openSolver('contingency', 'parcial1')">
+          <div>
+            <div class="feature-header">
+              <div class="feature-icon" style="color:#6366f1;">📊</div>
+              <div class="feature-title">Tablas de Contingencia</div>
+            </div>
+            <p class="feature-desc">Resuelve celdas incógnitas (A, B, C, D), probabilidades marginales, conjuntas, condicionales, uniones y demuestra independencia estocástica.</p>
+          </div>
+          <div class="card-footer-btn">
+            <span>Ej: Comisiones Ciberseguridad</span>
+            <span>Resolver →</span>
+          </div>
+        </div>
+
+        <div class="feature-card" onclick="App.openSolver('bayes', 'farmacias')">
+          <div>
+            <div class="feature-header">
+              <div class="feature-icon" style="color:#10b981;">🌳</div>
+              <div class="feature-title">Bayes & Probabilidad Total</div>
+            </div>
+            <p class="feature-desc">Árbol de probabilidad dinámico con cálculo de Probabilidad Total a priori y Teorema de Bayes a posteriori con desarrollo algebraico.</p>
+          </div>
+          <div class="card-footer-btn">
+            <span>Ej: Farmacias NOA / Circo</span>
+            <span>Resolver →</span>
+          </div>
+        </div>
+
+        <div class="feature-card" onclick="App.openSolver('discrete', 'negativeBinomial')">
+          <div>
+            <div class="feature-header">
+              <div class="feature-icon" style="color:#f59e0b;">🎲</div>
+              <div class="feature-title">Binomial & Pascal (Negativa)</div>
+            </div>
+            <p class="feature-desc">Distribución Binomial B(n, p) y Binomial Negativa Pascal para hallar la probabilidad de obtener el r-ésimo éxito en x ensayos.</p>
+          </div>
+          <div class="card-footer-btn">
+            <span>Ej: Finales Diciembre (4to en 6to)</span>
+            <span>Resolver →</span>
+          </div>
+        </div>
+
+        <div class="feature-card" onclick="App.openSolver('continuous', 'normal')">
+          <div>
+            <div class="feature-header">
+              <div class="feature-icon" style="color:#06b6d4;">🔔</div>
+              <div class="feature-title">Distribución Normal (Gauss)</div>
+            </div>
+            <p class="feature-desc">Estandarización Z, cálculo de probabilidades por intervalos, cuantiles/percentiles y gráfica interactiva con área sombreada.</p>
+          </div>
+          <div class="card-footer-btn">
+            <span>Ej: Capacitación CEP / Glucosa</span>
+            <span>Resolver →</span>
+          </div>
+        </div>
+
+        <div class="feature-card" onclick="App.openSolver('discrete', 'poissonGamma')">
+          <div>
+            <div class="feature-header">
+              <div class="feature-icon" style="color:#ec4899;">⏱️</div>
+              <div class="feature-title">Poisson & Gamma / Erlang</div>
+            </div>
+            <p class="feature-desc">Modelado de eventos temporales con Poisson y tiempos de espera continuos con Gamma y Erlang mediante el teorema Poisson-Gamma.</p>
+          </div>
+          <div class="card-footer-btn">
+            <span>Ej: Heladería / Servidor Web</span>
+            <span>Resolver →</span>
+          </div>
+        </div>
+
+        <div class="feature-card" onclick="App.openSolver('continuous', 'uniform')">
+          <div>
+            <div class="feature-header">
+              <div class="feature-icon" style="color:#8b5cf6;">📏</div>
+              <div class="feature-title">Uniforme Continua (Rectangular)</div>
+            </div>
+            <p class="feature-desc">Cálculo de esperanza, varianza, desviación estándar y probabilidades de intervalos en [a, b].</p>
+          </div>
+          <div class="card-footer-btn">
+            <span>Ej: Lead Time de Repuesto</span>
+            <span>Resolver →</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Parciales Direct Access Section -->
+      <div class="solver-card">
+        <div class="solver-header">
+          <div class="solver-title">📝 Exámenes Parciales Resueltos del PDF</div>
+          <button class="btn btn-primary btn-sm" onclick="App.navigateTo('exams')">Ver Todos los Parciales</button>
+        </div>
+        <p class="hero-desc">Accede a los 4 parciales completos extraídos de los apuntes con todas las consignas resueltas y el botón interactivo para probar tus propios valores.</p>
+        <div class="grid-2 mt-2">
+          <button class="btn btn-secondary" onclick="App.viewExam('parcial-1')">📄 Parcial 1: Tema 1 Completo</button>
+          <button class="btn btn-secondary" onclick="App.viewExam('parcial-2')">📄 Parcial 2: Tema 2 con Uniforme</button>
+          <button class="btn btn-secondary" onclick="App.viewExam('parcial-3')">📄 Parcial 3: Surubíes & Glucosa</button>
+          <button class="btn btn-secondary" onclick="App.viewExam('parcial-4')">📄 Parcial 4: Taller 200 Autos</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         TAB 2: TEORÍA COMPLETA
+         ============================================================ -->
+    <section id="tab-theory" class="tab-content">
+      <div class="solver-header">
+        <div class="solver-title">📖 Teoría de Probabilidad y Estadística</div>
+        <div style="flex:1; max-width:320px;">
+          <input type="text" class="form-control" id="theorySearchInput" placeholder="🔍 Buscar tema, fórmula, teorema..." oninput="App.filterTheory()">
+        </div>
+      </div>
+      <p class="hero-desc mb-2">Contenido teórico basado en los apuntes de cátedra de la Dra. Nora Lac Prugent, Marta Corro y el Ing. Octavio Daniel Coro (FI - UNJu).</p>
+
+      <div id="theoryContainer">
+        <!-- Injected via JavaScript from TheoryData -->
+      </div>
+    </section>
+
+    <!-- ============================================================
+         TAB 3: SOLUCIONADOR INTERACTIVO
+         ============================================================ -->
+    <section id="tab-solvers" class="tab-content">
+      
+      <!-- Solvers Sub-Navigation Pills -->
+      <div class="pills-nav">
+        <button class="pill-item active" data-subsolver="contingency" onclick="App.switchSubsolver('contingency')">📊 Tablas de Contingencia</button>
+        <button class="pill-item" data-subsolver="bayes" onclick="App.switchSubsolver('bayes')">🌳 Bayes & Prob. Total</button>
+        <button class="pill-item" data-subsolver="discrete" onclick="App.switchSubsolver('discrete')">🎲 Variables Discretas</button>
+        <button class="pill-item" data-subsolver="continuous" onclick="App.switchSubsolver('continuous')">🔔 Variables Continuas</button>
+        <button class="pill-item" data-subsolver="combinatorics" onclick="App.switchSubsolver('combinatorics')">🔢 Combinatoria</button>
+      </div>
+
+      <!-- 1. SOLVER: TABLAS DE CONTINGENCIA -->
+      <div id="subsolver-contingency" class="subsolver-view">
+        <div class="solver-card">
+          <div class="solver-header">
+            <div class="solver-title">📊 Solucionador de Tablas de Contingencia</div>
+            <div class="header-actions">
+              <select class="form-control" id="contingencyPresetSelect" onchange="App.loadContingencyPreset(this.value)">
+                <option value="parcial1">Cargar: Parcial 1 (Ciberseguridad 5x4)</option>
+                <option value="parcial2">Cargar: Parcial 2 (Encuesta Alumnos 4x4)</option>
+                <option value="parcial4">Cargar: Parcial 4 (Taller Automotriz 3x3)</option>
+                <option value="custom">Tabla Personalizada</option>
+              </select>
+            </div>
+          </div>
+          <p class="hero-desc">Puedes escribir letras (como <code>A</code>, <code>B</code>, <code>C</code>, <code>D</code>) o dejar celdas vacías y el sistema resolverá automáticamente los valores faltantes.</p>
+
+          <div class="table-responsive" id="contingencyTableWrapper">
+            <!-- Table dynamically injected by JS -->
+          </div>
+
+          <div class="mt-2" style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+            <button class="btn btn-primary" onclick="App.calculateContingency()">🧮 Resolver Tabla e Incógnitas</button>
+            <button class="btn btn-secondary" onclick="App.resetContingencyTable()">🔄 Restablecer</button>
+          </div>
+
+          <!-- Contingency Results -->
+          <div id="contingencyResults" class="result-card" style="display:none;"></div>
+
+          <!-- Bar Chart for Contingency Table -->
+          <div id="contingencyChartBox" class="chart-container" style="display:none;">
+            <canvas id="contingencyCanvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. SOLVER: BAYES Y PROBABILIDAD TOTAL -->
+      <div id="subsolver-bayes" class="subsolver-view" style="display:none;">
+        <div class="solver-card">
+          <div class="solver-header">
+            <div class="solver-title">🌳 Árbol de Probabilidad y Teorema de Bayes</div>
+            <select class="form-control" id="bayesPresetSelect" onchange="App.loadBayesPreset(this.value)">
+              <option value="farmacias">Cargar: Farmacias NOA (Ambulatorio, Magistrales, Alto Costo)</option>
+              <option value="circo">Cargar: Circo Mágico (Elefantes, Leones, Monos)</option>
+              <option value="accidentes">Cargar: Accidentes Sábado (Alcohol, Imprudencia, Mecánico)</option>
+              <option value="custom">Personalizado</option>
+            </select>
+          </div>
+
+          <div id="bayesCausesContainer">
+            <!-- Cause rows injected dynamically -->
+          </div>
+
+          <div class="mt-2" style="display:flex; gap:0.5rem;">
+            <button class="btn btn-secondary btn-sm" onclick="App.addBayesCause()">➕ Agregar Causa / Rama</button>
+            <button class="btn btn-primary" onclick="App.calculateBayes()">⚡ Calcular Probabilidad Total & Bayes</button>
+          </div>
+
+          <!-- Bayes Results Box -->
+          <div id="bayesResults" class="result-card" style="display:none;"></div>
+
+          <!-- Visual Tree Canvas -->
+          <div class="chart-container" style="height:300px; margin-top:1rem;">
+            <canvas id="bayesCanvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. SOLVER: VARIABLES ALEATORIAS DISCRETAS -->
+      <div id="subsolver-discrete" class="subsolver-view" style="display:none;">
+        <div class="solver-card">
+          <div class="solver-header">
+            <div class="solver-title">🎲 Distribuciones Discretas de Probabilidad</div>
+            <select class="form-control" id="discreteModelSelect" onchange="App.switchDiscreteModel(this.value)">
+              <option value="binomial">Binomial B(n, p)</option>
+              <option value="negativeBinomial">Binomial Negativa / Pascal BN(r, p)</option>
+              <option value="poisson">Poisson (λ o μ)</option>
+              <option value="hypergeometric">Hipergeométrica H(N, A, n)</option>
+              <option value="geometric">Geométrica (1° éxito)</option>
+            </select>
+          </div>
+
+          <!-- Model forms injected dynamically -->
+          <div id="discreteInputsContainer"></div>
+
+          <button class="btn btn-primary mt-2" onclick="App.calculateDiscrete()">🧮 Calcular Distribución</button>
+
+          <div id="discreteResults" class="result-card" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- 4. SOLVER: VARIABLES ALEATORIAS CONTINUAS -->
+      <div id="subsolver-continuous" class="subsolver-view" style="display:none;">
+        <div class="solver-card">
+          <div class="solver-header">
+            <div class="solver-title">🔔 Distribuciones Continuas de Probabilidad</div>
+            <select class="form-control" id="continuousModelSelect" onchange="App.switchContinuousModel(this.value)">
+              <option value="normal">Normal (Campana de Gauss N(μ, σ²))</option>
+              <option value="uniform">Uniforme Continua U(a, b)</option>
+              <option value="gamma">Gamma & Erlang (Relación Poisson-Gamma)</option>
+              <option value="exponential">Exponencial Exp(β)</option>
+            </select>
+          </div>
+
+          <!-- Continuous inputs -->
+          <div id="continuousInputsContainer"></div>
+
+          <button class="btn btn-primary mt-2" onclick="App.calculateContinuous()">🧮 Calcular Probabilidad Continua</button>
+
+          <div id="continuousResults" class="result-card" style="display:none;"></div>
+
+          <!-- Interactive Gauss Bell Curve Canvas -->
+          <div id="normalChartContainer" class="chart-container" style="display:none; height:260px;">
+            <canvas id="normalCanvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. SOLVER: COMBINATORIA -->
+      <div id="subsolver-combinatorics" class="subsolver-view" style="display:none;">
+        <div class="solver-card">
+          <div class="solver-title mb-1">🔢 Análisis Combinatorio y Técnicas de Conteo</div>
+          <p class="hero-desc">Calcula variaciones, permutaciones y combinaciones con y sin repetición.</p>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label">Elementos Totales (m o n)</label>
+              <input type="number" id="combM" class="form-control" value="10" min="1" max="100">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Elementos Tomados (n o k)</label>
+              <input type="number" id="combN" class="form-control" value="3" min="1" max="100">
+            </div>
+          </div>
+
+          <button class="btn btn-primary mt-2" onclick="App.calculateCombinatorics()">🧮 Calcular Conteo</button>
+
+          <div id="combinatoricsResults" class="result-card" style="display:none;"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ============================================================
+         TAB 4: PARCIALES RESUELTOS DEL PDF
+         ============================================================ -->
+    <section id="tab-exams" class="tab-content">
+      <div class="solver-header">
+        <div class="solver-title">📝 Parciales Reales Resueltos (Cátedra UNJu)</div>
+        <span class="badge badge-success">4 Exámenes Completos</span>
+      </div>
+      <p class="hero-desc mb-2">Exámenes extraídos directamente del documento <code>parciales (1).pdf</code> con explicaciones paso a paso de cada ejercicio y acceso directo a la calculadora interactiva.</p>
+
+      <div id="examsContainer">
+        <!-- Injected via JavaScript from ExamData -->
+      </div>
+    </section>
+
+    <!-- ============================================================
+         TAB 5: TABLAS ESTADÍSTICAS (NORMAL Z & GAMMA)
+         ============================================================ -->
+    <section id="tab-tables" class="tab-content">
+      <div class="solver-header">
+        <div class="solver-title">📊 Tablas Estadísticas Interactivas</div>
+        <div class="pills-nav" style="margin-bottom:0;">
+          <button class="pill-item active" id="pillTabNormal" onclick="App.switchStatTable('normal')">Tabla Normal Estándar Z</button>
+          <button class="pill-item" id="pillTabGamma" onclick="App.switchStatTable('gamma')">Tabla Función Gamma Γ(α)</button>
+        </div>
+      </div>
+
+      <!-- Normal Table Section -->
+      <div id="statTableNormalSection" class="solver-card mt-2">
+        <div class="solver-header">
+          <div class="solver-title">Distribución Normal Estándar Φ(z) = P(Z ≤ z)</div>
+          <div style="max-width:240px;">
+            <input type="number" step="0.01" class="form-control" id="zSearchInput" placeholder="Buscar valor de Z (ej: 1.64)..." oninput="App.highlightZTable(this.value)">
+          </div>
+        </div>
+        <p class="hero-desc">Busca cualquier valor de Z o probabilidad acumulada. Se resaltará automáticamente en la tabla.</p>
+        <div class="stat-table-wrapper" id="normalTableContainer">
+          <!-- Normal Table generated via JS -->
+        </div>
+      </div>
+
+      <!-- Gamma Table Section -->
+      <div id="statTableGammaSection" class="solver-card mt-2" style="display:none;">
+        <div class="solver-title mb-1">Tabla de Valores de la Función Gamma Γ(α) para α ∈ [1.00, 1.99]</div>
+        <p class="hero-desc">Para valores mayores recordar la propiedad de recurrencia: <code>Γ(α + 1) = α · Γ(α)</code> y para enteros <code>Γ(n) = (n - 1)!</code>.</p>
+        <div class="stat-table-wrapper" id="gammaTableContainer">
+          <!-- Gamma Table generated via JS -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Mobile Bottom Tab Navigation -->
+  <nav class="bottom-nav">
+    <a class="bottom-nav-item active" data-tab="home" onclick="App.navigateTo('home')">
+      <span class="nav-icon">🏠</span>
+      <span>Inicio</span>
+    </a>
+    <a class="bottom-nav-item" data-tab="theory" onclick="App.navigateTo('theory')">
+      <span class="nav-icon">📖</span>
+      <span>Teoría</span>
+    </a>
+    <a class="bottom-nav-item" data-tab="solvers" onclick="App.navigateTo('solvers')">
+      <span class="nav-icon">🧮</span>
+      <span>Solucionar</span>
+    </a>
+    <a class="bottom-nav-item" data-tab="exams" onclick="App.navigateTo('exams')">
+      <span class="nav-icon">📝</span>
+      <span>Parciales</span>
+    </a>
+    <a class="bottom-nav-item" data-tab="tables" onclick="App.navigateTo('tables')">
+      <span class="nav-icon">📊</span>
+      <span>Tablas</span>
+    </a>
+  </nav>
+
+  <!-- Application Scripts -->
+  <script src="js/math-utils.js"></script>
+  <script src="js/theory-data.js"></script>
+  <script src="js/exam-data.js"></script>
+  <script src="js/solvers.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
