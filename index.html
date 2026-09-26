@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
   <meta name="theme-color" content="#6366f1">
-  <meta name="description" content="Calculadora de Distribuciones y Parciales 2025 Resueltos - Probabilidad y Estadística FI-UNJu.">
+  <meta name="description" content="Calculadora de Distribuciones, Fórmulas para la Hoja, Cámara de Urgencia y Parciales 2025 - Probabilidad y Estadística FI-UNJu.">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Probabilidad & Estadística - Calculadora & Parciales 2025</title>
@@ -12,6 +12,12 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="icons/favicon.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  
+  <!-- KaTeX for crisp mathematical formulas -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -34,6 +40,9 @@
 
     <!-- Header Actions -->
     <div class="header-actions">
+      <button class="btn btn-sm btn-primary" onclick="App.openCameraModal()" style="display:inline-flex; gap:0.3rem;">
+        <span>📸</span> <span>Cámara</span>
+      </button>
       <button class="btn-icon" id="themeToggleBtn" title="Cambiar tema">🌓</button>
       <button class="btn-icon" id="installBtn" style="display:none;" title="Instalar en el celular">📲</button>
     </div>
@@ -43,27 +52,32 @@
   <main class="container">
 
     <!-- ============================================================
-         PESTAÑA 1: CALCULADORA & QUÉ PONER EN LA HOJA
+         PESTAÑA 1: CALCULADORA & CÓMO PONER EN LA HOJA
          ============================================================ -->
     <section id="tab-calculator" class="tab-content active">
       
       <div class="hero-banner" style="padding: 1.25rem;">
-        <h2 class="hero-title" style="font-size: 1.35rem;">🧮 Calculadora de Distribuciones & Guía para la Hoja</h2>
-        <p class="hero-desc">
-          Elige la distribución de tu problema para calcular la probabilidad exacta, ver el <strong>ejemplo típico del parcial 2025</strong> y copiar <strong>exactamente cómo tienes que escribir el desarrollo en tu hoja</strong> de examen.
-        </p>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+          <div>
+            <h2 class="hero-title" style="font-size: 1.35rem; margin-bottom:0.3rem;">🧮 Calculadora & Fórmulas Listas para la Hoja</h2>
+            <p class="hero-desc" style="margin-bottom:0;">
+              Selecciona tu distribución para calcular probabilidades, ver el <strong>ejemplo típico del parcial 2025</strong> y copiar las fórmulas <strong>sin código, listas para tu carpeta o parcial</strong>.
+            </p>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="App.openCameraModal()">📸 Escanear con Cámara</button>
+        </div>
       </div>
 
       <!-- Quick Selector Pills -->
       <div class="pills-nav" id="distSelectorPills">
         <button class="pill-item active" data-dist="binomial" onclick="App.selectDist('binomial')">🎲 Binomial B(n, p)</button>
         <button class="pill-item" data-dist="negativeBinomial" onclick="App.selectDist('negativeBinomial')">🎯 Binomial Negativa (Pascal)</button>
-        <button class="pill-item" data-dist="hypergeometric" onclick="App.selectDist('hypergeometric')">🐟 Hipergeométrica</button>
+        <button class="pill-item" data-dist="hypergeometric" onclick="App.selectDist('hypergeometric')">🐟 Hipergeométrica H(N, A, n)</button>
         <button class="pill-item" data-dist="poisson" onclick="App.selectDist('poisson')">⏱️ Poisson (λ · t)</button>
         <button class="pill-item" data-dist="normal" onclick="App.selectDist('normal')">🔔 Normal N(μ, σ²)</button>
-        <button class="pill-item" data-dist="uniformContinuous" onclick="App.selectDist('uniformContinuous')">📏 Uniforme Continua</button>
+        <button class="pill-item" data-dist="uniformContinuous" onclick="App.selectDist('uniformContinuous')">📏 Uniforme Continua U(a, b)</button>
         <button class="pill-item" data-dist="gamma" onclick="App.selectDist('gamma')">⏳ Gamma y Erlang</button>
-        <button class="pill-item" data-dist="exponential" onclick="App.selectDist('exponential')">⚡ Exponencial</button>
+        <button class="pill-item" data-dist="exponential" onclick="App.selectDist('exponential')">⚡ Exponencial Exp(β)</button>
         <button class="pill-item" data-dist="contingency" onclick="App.selectDist('contingency')">📊 Tablas de Contingencia</button>
         <button class="pill-item" data-dist="bayes" onclick="App.selectDist('bayes')">🌳 Teorema de Bayes</button>
       </div>
@@ -81,9 +95,9 @@
     <section id="tab-exams" class="tab-content">
       
       <div class="hero-banner" style="padding: 1.25rem;">
-        <h2 class="hero-title" style="font-size: 1.35rem;">📝 Parcial 2025 & Parcial 2025 V4 (Resolución Oficial)</h2>
+        <h2 class="hero-title" style="font-size: 1.35rem; margin-bottom:0.3rem;">📝 Parcial 2025 & Parcial 2025 V4 (Resolución Oficial)</h2>
         <p class="hero-desc">
-          Resolución completa de los exámenes oficiales de la cátedra de Ingeniería UNJu. Incluye tablas de contingencia resueltas, fórmulas matemáticas y el desarrollo paso a paso tal cual se entrega en el parcial.
+          Resolución completa de los exámenes oficiales de la cátedra de Ingeniería UNJu. Fórmulas limpias, tablas completas y desarrollo paso a paso para estudiar o verificar tus respuestas.
         </p>
       </div>
 
@@ -103,6 +117,12 @@
 
   </main>
 
+  <!-- Floating Camera FAB Button for Quick Urgencies -->
+  <button class="camera-fab" onclick="App.openCameraModal()" title="Escanear Parcial con Cámara">
+    <span>📸</span>
+    <span>Cámara Parcial</span>
+  </button>
+
   <!-- Mobile Bottom Tab Navigation: EXACTLY TWO TABS -->
   <nav class="bottom-nav">
     <a class="bottom-nav-item active" data-tab="calculator" onclick="App.navigateTo('calculator')">
@@ -114,6 +134,78 @@
       <span>Parciales 2025</span>
     </a>
   </nav>
+
+  <!-- ============================================================
+       MODAL DE CÁMARA Y ESCÁNER DE PARCIAL (URGENCIAS)
+       ============================================================ -->
+  <div class="modal-backdrop" id="cameraModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>📸</span>
+          <span>Escanear Parcial / Ejercicio de Urgencia</span>
+        </div>
+        <button class="btn-icon" onclick="App.closeCameraModal()" style="width:32px; height:32px; font-size:0.9rem;">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="hero-desc" style="font-size:0.88rem; margin-bottom:1rem;">
+          Toma una foto clara del enunciado de tu parcial con la cámara de tu celular o sube una foto de tu galería:
+        </p>
+
+        <!-- Hidden Native Mobile Camera Input -->
+        <input type="file" id="mobileCameraInput" accept="image/*" capture="environment" style="display:none;" onchange="App.handleImageSelected(this)">
+        <input type="file" id="galleryInput" accept="image/*,application/pdf" style="display:none;" onchange="App.handleImageSelected(this)">
+
+        <div class="camera-actions-row">
+          <button class="btn btn-primary" onclick="document.getElementById('mobileCameraInput').click()">
+            <span>📸</span> <span>Abrir Cámara Celu</span>
+          </button>
+          <button class="btn btn-secondary" onclick="document.getElementById('galleryInput').click()">
+            <span>📁</span> <span>Subir Foto / Archivo</span>
+          </button>
+        </div>
+
+        <!-- Camera Preview Box -->
+        <div class="camera-preview-box" id="cameraPreviewBox">
+          <video id="liveVideo" autoplay playsinline style="display:none; width:100%;"></video>
+          <img id="capturedImage" style="display:none;" alt="Parcial Capturado">
+          <div id="cameraPlaceholderText" style="color:var(--text-muted); text-align:center; padding:1.5rem;">
+            <span style="font-size:2.5rem; display:block; margin-bottom:0.5rem;">📄</span>
+            Toma o sube una foto para visualizarla aquí
+          </div>
+        </div>
+
+        <!-- Video Live Stream Controls (Desktop) -->
+        <div id="liveStreamControls" style="display:none; margin-bottom:1rem;">
+          <button class="btn btn-primary btn-block" onclick="App.snapPhoto()">⚡ Capturar Foto de la Cámara</button>
+        </div>
+
+        <!-- Quick Resolver Launcher -->
+        <div id="cameraResolverSection" style="display:none;" class="formula-box highlight">
+          <strong style="color:var(--primary); display:block; margin-bottom:0.4rem;">🎯 ¿Qué distribución es este ejercicio? Toca para resolver:</strong>
+          <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.4rem;">
+            <button class="btn btn-secondary btn-sm" onclick="App.quickSolveFromCamera('binomial')">🎲 Binomial</button>
+            <button class="btn btn-secondary btn-sm" onclick="App.quickSolveFromCamera('negativeBinomial')">🎯 Binomial Negativa</button>
+            <button class="btn btn-secondary btn-sm" onclick="App.quickSolveFromCamera('hypergeometric')">🐟 Hipergeométrica</button>
+            <button class="btn btn-secondary btn-sm" onclick="App.quickSolveFromCamera('poisson')">⏱️ Poisson</button>
+            <button class="btn btn-secondary btn-sm" onclick="App.quickSolveFromCamera('normal')">🔔 Normal</button>
+            <button class="btn btn-secondary btn-sm" onclick="App.quickSolveFromCamera('uniformContinuous')">📏 Uniforme</button>
+            <button class="btn btn-secondary btn-sm" onclick="App.quickSolveFromCamera('gamma')">⏳ Gamma</button>
+            <button class="btn btn-secondary btn-sm" onclick="App.quickSolveFromCamera('contingency')">📊 Tabla</button>
+            <button class="btn btn-secondary btn-sm" onclick="App.quickSolveFromCamera('bayes')">🌳 Bayes</button>
+          </div>
+        </div>
+
+        <!-- Urgent Assistant Notice -->
+        <div class="alert-box mt-2">
+          <strong>💡 Ayuda en Vivo en el Chat:</strong>
+          <p style="margin-top:0.2rem; font-size:0.82rem;">
+            Si necesitas que te lo resuelva de inmediato, ¡mándame la foto de tu parcial directamente por este chat! Tengo visión multimodal para leer tu foto y resolverte cada inciso paso a paso con las fórmulas oficiales de la UNJu.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Application Scripts -->
   <script src="js/math-utils.js"></script>

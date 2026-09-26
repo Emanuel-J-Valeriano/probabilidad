@@ -1,11 +1,13 @@
 /**
  * Main Controller Application - Probabilidad & Estadística UNJu (Parciales 2025)
  * Streamlined 2-Tab Architecture: Calculadora & Hoja de Examen + Parciales 2025 Resueltos
+ * Includes Clean Math Formatting, One-Click Copy for Carpeta, and Camera Urgency Scanner
  */
 const App = {
   activeTab: 'calculator',
   currentDist: 'binomial',
   currentExam: 'parcial-2025-a',
+  cameraStream: null,
 
   init() {
     this.initTheme();
@@ -13,6 +15,7 @@ const App = {
     this.selectDist('binomial');
     this.renderExams();
     this.bindEvents();
+    this.renderMath();
     console.log("App Probabilidad 2025 initialized.");
   },
 
@@ -42,6 +45,53 @@ const App = {
   },
 
   // -------------------------------------------------------------
+  // Math Auto-Renderer (KaTeX + Unicode Fallback)
+  // -------------------------------------------------------------
+  renderMath() {
+    // If KaTeX is loaded and available, use it on all .math-expr
+    if (window.renderMathInElement) {
+      try {
+        window.renderMathInElement(document.body, {
+          delimiters: [
+            { left: "$$", right: "$$", display: true },
+            { left: "$", right: "$", display: false },
+            { left: "\\(", right: "\\)", display: false },
+            { left: "\\[", right: "\\]", display: true }
+          ],
+          throwOnError: false
+        });
+      } catch (e) {
+        console.warn('KaTeX render error:', e);
+      }
+    }
+  },
+
+  // Copy Clean Text to Clipboard for Folder/Notebook
+  copySheetText(elementId, btnElement) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+
+    // Get text and clean any remaining markup
+    let text = el.innerText || el.textContent;
+    // Clean multiple linebreaks
+    text = text.replace(/\n\s*\n\s*\n/g, '\n\n').trim();
+
+    navigator.clipboard.writeText(text).then(() => {
+      if (btnElement) {
+        const originalText = btnElement.innerHTML;
+        btnElement.innerHTML = '✅ ¡Copiado!';
+        btnElement.classList.add('copied');
+        setTimeout(() => {
+          btnElement.innerHTML = originalText;
+          btnElement.classList.remove('copied');
+        }, 2000);
+      }
+    }).catch(err => {
+      console.warn('Clipboard failed:', err);
+    });
+  },
+
+  // -------------------------------------------------------------
   // Navigation between the 2 tabs
   // -------------------------------------------------------------
   navigateTo(tabId) {
@@ -61,10 +111,11 @@ const App = {
     });
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => this.renderMath(), 50);
   },
 
   // -------------------------------------------------------------
-  // TAB 1: CALCULADORA & QUÉ PONER EN LA HOJA
+  // TAB 1: CALCULADORA & CÓMO PONER EN LA HOJA
   // -------------------------------------------------------------
   selectDist(distId) {
     this.currentDist = distId;
@@ -73,6 +124,7 @@ const App = {
     });
 
     this.renderDistCard(distId);
+    setTimeout(() => this.renderMath(), 50);
   },
 
   renderDistCard(distId) {
@@ -122,29 +174,32 @@ const App = {
 
         <!-- Qué poner en la hoja del parcial -->
         <div class="mt-2">
-          <h4 style="color:#34d399; margin-bottom:0.5rem;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
-          <div class="sheet-template">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+            <h4 style="color:#34d399; margin:0;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
+            <button class="copy-btn" onclick="App.copySheetText('sheet_binomial', this)">📋 Copiar para mi Carpeta</button>
+          </div>
+          <div class="sheet-template" id="sheet_binomial">
             <div class="sheet-step"><span class="step-num">1</span> <strong>Definición formal de la Variable:</strong><br>
-            <em>"Sea X: número de alumnos que se levantan temprano en una muestra de n = 16 alumnos encuestados. X es una variable aleatoria discreta."</em></div>
+            <em>Sea X: número de alumnos que se levantan temprano en una muestra de n = 16 alumnos encuestados. X es una variable aleatoria discreta.</em></div>
 
             <div class="sheet-step"><span class="step-num">2</span> <strong>Modelo y Parámetros:</strong><br>
-            <span class="badge badge-primary">X ~ B(n = 16, p = 0.30)</span> con q = 1 - p = 0.70</div>
+            X ~ B(n = 16, p = 0.30) con q = 1 - p = 0.70</div>
 
             <div class="sheet-step"><span class="step-num">3</span> <strong>Función de Probabilidad Puntual:</strong><br>
-            <code class="math-expr">P(X = x) = \\binom{n}{x} p^x (1 - p)^{n - x} \\quad \\text{para } x = 0, 1, ..., n</code></div>
+            P(X = x) = C(n, x) · p^x · (1 - p)^(n - x)    para x = 0, 1, 2, ..., n</div>
 
             <div class="sheet-step"><span class="step-num">4</span> <strong>Sustitución Numérica para exactamente 4 alumnos P(X = 4):</strong><br>
-            <code class="math-expr">P(X = 4) = \\binom{16}{4} (0.30)^4 (0.70)^{12} = 1820 \\cdot (0.0081) \\cdot (0.01384) = 0.2040 \\quad (20.40%)</code></div>
+            P(X = 4) = C(16, 4) · (0.30)⁴ · (0.70)¹² = 1820 · (0.0081) · (0.01384) = 0.2040 (20.40%)</div>
 
             <div class="sheet-step"><span class="step-num">5</span> <strong>Sustitución para más de 8 alumnos P(X > 8):</strong><br>
-            <code class="math-expr">P(X > 8) = 1 - P(X \\le 8) = 1 - 0.9743 = 0.0257 \\quad (2.57%)</code></div>
+            P(X > 8) = 1 - P(X ≤ 8) = 1 - 0.9743 = 0.0257 (2.57%)</div>
 
             <div class="sheet-step"><span class="step-num">6</span> <strong>Esperanza y Varianza:</strong><br>
-            <code>E(X) = n · p = 16 × 0.30 = 4.8 alumnos</code><br>
-            <code>Var(X) = n · p · q = 16 × 0.30 × 0.70 = 3.36</code> ⟹ <code>σ = √3.36 ≈ 1.833</code></div>
+            E(X) = n · p = 16 × 0.30 = 4.8 alumnos<br>
+            Var(X) = n · p · q = 16 × 0.30 × 0.70 = 3.36 ⟹ σ = √3.36 ≈ 1.833</div>
 
             <div class="sheet-step"><span class="step-num">7</span> <strong>Conclusión redactada:</strong><br>
-            <em>"Respuesta: La probabilidad de que exactamente 4 alumnos se levanten temprano es del 20.40%, y el valor esperado es de 4.8 alumnos."</em></div>
+            <em>Respuesta: La probabilidad de que exactamente 4 alumnos se levanten temprano es del 20.40%, y el valor esperado es de 4.8 alumnos.</em></div>
           </div>
         </div>
       `;
@@ -180,27 +235,30 @@ const App = {
 
         <!-- Qué poner en la hoja del parcial -->
         <div class="mt-2">
-          <h4 style="color:#34d399; margin-bottom:0.5rem;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
-          <div class="sheet-template">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+            <h4 style="color:#34d399; margin:0;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
+            <button class="copy-btn" onclick="App.copySheetText('sheet_negativeBinomial', this)">📋 Copiar para mi Carpeta</button>
+          </div>
+          <div class="sheet-template" id="sheet_negativeBinomial">
             <div class="sheet-step"><span class="step-num">1</span> <strong>Definición formal de la Variable:</strong><br>
-            <em>"Sea X: número total de alumnos entrevistados hasta encontrar r = 4 alumnos que cursaron la materia este año. X es una variable aleatoria discreta."</em></div>
+            <em>Sea X: número total de alumnos entrevistados hasta encontrar r = 4 alumnos que cursaron la materia este año. X es una variable aleatoria discreta.</em></div>
 
             <div class="sheet-step"><span class="step-num">2</span> <strong>Identificación del Modelo y Parámetros:</strong><br>
-            <span class="badge badge-primary">X ~ BN(r = 4, p = 0.80)</span> (Distribución Binomial Negativa o de Pascal).</div>
+            X ~ BN(r = 4, p = 0.80)  (Distribución Binomial Negativa o de Pascal).</div>
 
             <div class="sheet-step"><span class="step-num">3</span> <strong>Función de Probabilidad Puntual:</strong><br>
-            <code class="math-expr">P(X = x) = \\binom{x - 1}{r - 1} p^r (1 - p)^{x - r} \\quad \\text{para } x = r, r+1, r+2, ...</code></div>
+            P(X = x) = C(x - 1, r - 1) · p^r · (1 - p)^(x - r)    para x = r, r+1, r+2, ...</div>
 
             <div class="sheet-step"><span class="step-num">4</span> <strong>Sustitución para x = 6 y r = 4:</strong><br>
-            <code class="math-expr">P(X = 6) = \\binom{6 - 1}{4 - 1} (0.80)^4 (0.20)^{6 - 4} = \\binom{5}{3} (0.80)^4 (0.20)^2</code><br>
-            <code class="math-expr">\\binom{5}{3} = \\frac{5 \\cdot 4 \\cdot 3}{3 \\cdot 2 \\cdot 1} = 10</code><br>
-            <code class="math-expr">P(X = 6) = 10 \\cdot 0.4096 \\cdot 0.04 = 0.16384 \\quad (16.38%)</code></div>
+            P(X = 6) = C(6 - 1, 4 - 1) · (0.80)⁴ · (0.20)^(6 - 4) = C(5, 3) · (0.80)⁴ · (0.20)²<br>
+            C(5, 3) = (5 · 4 · 3) / (3 · 2 · 1) = 10<br>
+            P(X = 6) = 10 · 0.4096 · 0.04 = 0.16384 (16.38%)</div>
 
             <div class="sheet-step"><span class="step-num">5</span> <strong>Esperanza Matemática:</strong><br>
-            <code>E(X) = r / p = 4 / 0.80 = 5 alumnos a entrevistar</code></div>
+            E(X) = r / p = 4 / 0.80 = 5 alumnos a entrevistar</div>
 
             <div class="sheet-step"><span class="step-num">6</span> <strong>Conclusión redactada:</strong><br>
-            <em>"Respuesta: La probabilidad de que el sexto alumno entrevistado sea el cuarto que cursó este año es del 16.38%."</em></div>
+            <em>Respuesta: La probabilidad de que el sexto alumno entrevistado sea el cuarto que cursó este año es del 16.38%.</em></div>
           </div>
         </div>
       `;
@@ -237,28 +295,31 @@ const App = {
 
         <!-- Qué poner en la hoja del parcial -->
         <div class="mt-2">
-          <h4 style="color:#34d399; margin-bottom:0.5rem;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
-          <div class="sheet-template">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+            <h4 style="color:#34d399; margin:0;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
+            <button class="copy-btn" onclick="App.copySheetText('sheet_hypergeometric', this)">📋 Copiar para mi Carpeta</button>
+          </div>
+          <div class="sheet-template" id="sheet_hypergeometric">
             <div class="sheet-step"><span class="step-num">1</span> <strong>Definición formal de la Variable:</strong><br>
-            <em>"Sea X: número de surubíes obtenidos en la muestra de tamaño n = 7 capturados sin reemplazo de una población total N = 47. X es una V.A. discreta."</em></div>
+            <em>Sea X: número de surubíes obtenidos en la muestra de tamaño n = 7 capturados sin reemplazo de una población total N = 47. X es una V.A. discreta.</em></div>
 
             <div class="sheet-step"><span class="step-num">2</span> <strong>Modelo y Parámetros:</strong><br>
-            <span class="badge badge-primary">X ~ H(N = 47, A = 23, n = 7)</span> con N - A = 24 peces que no son surubíes.</div>
+            X ~ H(N = 47, A = 23, n = 7) con N - A = 24 peces que no son surubíes.</div>
 
             <div class="sheet-step"><span class="step-num">3</span> <strong>Función de Probabilidad Hipergeométrica:</strong><br>
-            <code class="math-expr">P(X = x) = \\frac{\\binom{A}{x} \\binom{N - A}{n - x}}{\\binom{N}{n}}</code></div>
+            P(X = x) = [C(A, x) · C(N - A, n - x)] / C(N, n)</div>
 
             <div class="sheet-step"><span class="step-num">4</span> <strong>Sustitución para exactamente 2 surubíes P(X = 2):</strong><br>
-            <code class="math-expr">P(X = 2) = \\frac{\\binom{23}{2} \\binom{24}{5}}{\\binom{47}{7}} = \\frac{253 \\cdot 42504}{62891499} = \\frac{10753512}{62891499} = 0.1710 \\quad (17.10%)</code></div>
+            P(X = 2) = [C(23, 2) · C(24, 5)] / C(47, 7) = [253 · 42504] / 62891499 = 10753512 / 62891499 = 0.1710 (17.10%)</div>
 
             <div class="sheet-step"><span class="step-num">5</span> <strong>Por lo menos 2 surubíes P(X ≥ 2):</strong><br>
-            <code>P(X ≥ 2) = 1 - P(X = 0) - P(X = 1) = 1 - (0.0055 + 0.0492) = 0.9453 (94.53%)</code></div>
+            P(X ≥ 2) = 1 - P(X = 0) - P(X = 1) = 1 - (0.0055 + 0.0492) = 0.9453 (94.53%)</div>
 
             <div class="sheet-step"><span class="step-num">6</span> <strong>Número esperado de surubíes:</strong><br>
-            <code class="math-expr">E(X) = n \\cdot \\frac{A}{N} = 7 \\cdot \\frac{23}{47} = \\frac{161}{47} = 3.4255 \\approx 3.43 \\text{ surubíes}</code></div>
+            E(X) = n · (A / N) = 7 · (23 / 47) = 161 / 47 = 3.4255 ≈ 3.43 surubíes</div>
 
             <div class="sheet-step"><span class="step-num">7</span> <strong>Conclusión:</strong><br>
-            <em>"Respuesta: La probabilidad de capturar exactamente 2 surubíes es del 17.10%, y el número esperado es de aproximadamente 3.43 surubíes."</em></div>
+            <em>Respuesta: La probabilidad de capturar exactamente 2 surubíes es del 17.10%, y el número esperado es de aproximadamente 3.43 surubíes.</em></div>
           </div>
         </div>
       `;
@@ -301,26 +362,29 @@ const App = {
 
         <!-- Qué poner en la hoja del parcial -->
         <div class="mt-2">
-          <h4 style="color:#34d399; margin-bottom:0.5rem;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
-          <div class="sheet-template">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+            <h4 style="color:#34d399; margin:0;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
+            <button class="copy-btn" onclick="App.copySheetText('sheet_poisson', this)">📋 Copiar para mi Carpeta</button>
+          </div>
+          <div class="sheet-template" id="sheet_poisson">
             <div class="sheet-step"><span class="step-num">1</span> <strong>Definición de la Variable:</strong><br>
-            <em>"Sea X: número de clientes que llegan a la heladería en el intervalo considerado. X es una V.A. discreta."</em></div>
+            <em>Sea X: número de clientes que llegan a la heladería en el intervalo considerado. X es una V.A. discreta.</em></div>
 
             <div class="sheet-step"><span class="step-num">2</span> <strong>Parámetro para 1 minuto (t = 1 min):</strong><br>
-            <code>μ = λ · t = 5 × 1 = 5</code> ⟹ <span class="badge badge-primary">X ~ Poisson(μ = 5)</span></div>
+            μ = λ · t = 5 × 1 = 5 ⟹ X ~ Poisson(μ = 5)</div>
 
-            <div class="sheet-step"><span class="step-num">3</span> <strong>Función de Probabilidad:</strong><br>
-            <code class="math-expr">P(X = x) = \\frac{e^{-\\mu} \\cdot \\mu^x}{x!} \\quad \\text{para } x = 0, 1, 2, ...</code></div>
+            <div class="sheet-step"><span class="step-num">3</span> <strong>Función de Probabilidad Puntual:</strong><br>
+            P(X = x) = [e^(-μ) · μ^x] / x!    para x = 0, 1, 2, ...</div>
 
-            <div class="sheet-step"><span class="step-num">4</span> <strong>Sustitución para x = 7 clientes:</strong><br>
-            <code class="math-expr">P(X = 7) = \\frac{e^{-5} \\cdot 5^7}{7!} = \\frac{(0.0067379) \\cdot 78125}{5040} = 0.1044 \\quad (10.44%)</code></div>
+            <div class="sheet-step"><span class="step-num">4</span> <strong>Sustitución para x = 7 clientes en 1 minuto:</strong><br>
+            P(X = 7) = [e^(-5) · 5^7] / 7! = [0.0067379 · 78125] / 5040 = 0.1044 (10.44%)</div>
 
-            <div class="sheet-step"><span class="step-num">5</span> <strong>Cambio de Escala para 30 segundos (t = 0.5 min):</strong><br>
-            <code>μ' = λ · t' = 5 × 0.5 = 2.5 clientes</code><br>
-            <code class="math-expr">P(3 \\le X \\le 7) = P(3) + P(4) + P(5) + P(6) + P(7) = 0.4520 \\quad (45.20%)</code></div>
+            <div class="sheet-step"><span class="step-num">5</span> <strong>Cambio de Escala para 30 segundos (t' = 0.5 min):</strong><br>
+            μ' = λ · t' = 5 × 0.5 = 2.5 clientes<br>
+            P(3 ≤ X ≤ 7) = P(3) + P(4) + P(5) + P(6) + P(7) = 0.4520 (45.20%)</div>
 
             <div class="sheet-step"><span class="step-num">6</span> <strong>Esperanza y Varianza:</strong><br>
-            <code>E(X) = μ = 5</code>, <code>Var(X) = μ = 5</code></div>
+            E(X) = μ = 5 clientes, Var(X) = μ = 5 (σ = √5 ≈ 2.236)</div>
           </div>
         </div>
       `;
@@ -360,30 +424,34 @@ const App = {
 
         <!-- Qué poner en la hoja del parcial -->
         <div class="mt-2">
-          <h4 style="color:#34d399; margin-bottom:0.5rem;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
-          <div class="sheet-template">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+            <h4 style="color:#34d399; margin:0;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
+            <button class="copy-btn" onclick="App.copySheetText('sheet_normal', this)">📋 Copiar para mi Carpeta</button>
+          </div>
+          <div class="sheet-template" id="sheet_normal">
             <div class="sheet-step"><span class="step-num">1</span> <strong>Definición formal de la Variable:</strong><br>
-            <em>"Sea X: duración en horas del curso de capacitación de operarios. X es una variable aleatoria continua."</em></div>
+            <em>Sea X: duración en horas del curso de capacitación de operarios. X es una variable aleatoria continua.</em></div>
 
             <div class="sheet-step"><span class="step-num">2</span> <strong>Modelo y Parámetros:</strong><br>
-            <span class="badge badge-primary">X ~ N(μ = 8.2, σ = 1.1)</span> con varianza σ² = 1.21.</div>
+            X ~ N(μ = 8.2, σ = 1.1) con varianza σ² = 1.21 hs².</div>
 
             <div class="sheet-step"><span class="step-num">3</span> <strong>Estandarización a la Normal Estándar Z ~ N(0, 1):</strong><br>
-            <code class="math-expr">Z = \\frac{X - \\mu}{\\sigma} = \\frac{X - 8.2}{1.1}</code></div>
+            Z = (X - μ) / σ = (X - 8.2) / 1.1</div>
 
             <div class="sheet-step"><span class="step-num">4</span> <strong>Estandarizar Límites x₁ = 7 y x₂ = 10:</strong><br>
-            <code class="math-expr">z_1 = \\frac{7 - 8.2}{1.1} = \\frac{-1.2}{1.1} = -1.09 \\quad | \\quad z_2 = \\frac{10 - 8.2}{1.1} = \\frac{1.8}{1.1} = 1.64</code></div>
+            z₁ = (7 - 8.2) / 1.1 = -1.2 / 1.1 = -1.09<br>
+            z₂ = (10 - 8.2) / 1.1 = 1.8 / 1.1 = 1.64</div>
 
             <div class="sheet-step"><span class="step-num">5</span> <strong>Cálculo de Probabilidad por Tabla Normal Φ(z):</strong><br>
-            <code class="math-expr">P(7 \\le X \\le 10) = P(-1.09 \\le Z \\le 1.64) = \\Phi(1.64) - \\Phi(-1.09)</code><br>
-            Por simetría: <code>Φ(-1.09) = 1 - Φ(1.09) = 1 - 0.8621 = 0.1379</code><br>
-            <code class="math-expr">P(7 \\le X \\le 10) = 0.9495 - 0.1379 = 0.8116 \\quad (81.16%)</code></div>
+            P(7 ≤ X ≤ 10) = P(-1.09 ≤ Z ≤ 1.64) = Φ(1.64) - Φ(-1.09)<br>
+            Por simetría: Φ(-1.09) = 1 - Φ(1.09) = 1 - 0.8621 = 0.1379<br>
+            P(7 ≤ X ≤ 10) = 0.9495 - 0.1379 = 0.8116 (81.16%)</div>
 
             <div class="sheet-step"><span class="step-num">6</span> <strong>Proyección en Población N = 20 encuentros:</strong><br>
-            <code>E = N · P = 20 × 0.8116 = 16.23 ≈ 16 encuentros</code></div>
+            E = N · P = 20 × 0.8116 = 16.23 ≈ 16 encuentros</div>
 
             <div class="sheet-step"><span class="step-num">7</span> <strong>Conclusión redactada:</strong><br>
-            <em>"Respuesta: Como la probabilidad 81.16% > 75%, SE RECOMIENDA contratar el servicio extra. Se espera que 16 de los 20 encuentros duren entre 7 y 10 horas."</em></div>
+            <em>Respuesta: Como la probabilidad 81.16% > 75%, SE RECOMIENDA contratar el servicio extra. Se espera que 16 de los 20 encuentros duren entre 7 y 10 horas.</em></div>
           </div>
         </div>
       `;
@@ -419,28 +487,31 @@ const App = {
 
         <!-- Qué poner en la hoja del parcial -->
         <div class="mt-2">
-          <h4 style="color:#34d399; margin-bottom:0.5rem;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
-          <div class="sheet-template">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+            <h4 style="color:#34d399; margin:0;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
+            <button class="copy-btn" onclick="App.copySheetText('sheet_uniformContinuous', this)">📋 Copiar para mi Carpeta</button>
+          </div>
+          <div class="sheet-template" id="sheet_uniformContinuous">
             <div class="sheet-step"><span class="step-num">1</span> <strong>Definición formal de la Variable:</strong><br>
-            <em>"Sea X: tiempo de reposición (lead time) en días. X es una V.A. continua uniforme en [4, 10]."</em></div>
+            <em>Sea X: tiempo de reposición (lead time) en días. X es una V.A. continua uniforme en [4, 10].</em></div>
 
             <div class="sheet-step"><span class="step-num">2</span> <strong>Modelo y Parámetros:</strong><br>
-            <span class="badge badge-primary">X ~ U(a = 4, b = 10)</span> con longitud de base b - a = 6 días.</div>
+            X ~ U(a = 4, b = 10) con longitud de base b - a = 6 días.</div>
 
             <div class="sheet-step"><span class="step-num">3</span> <strong>Función de Densidad y Distribución:</strong><br>
-            <code class="math-expr">f(x) = \\frac{1}{b - a} = \\frac{1}{6} \\quad (4 \\le x \\le 10)</code><br>
-            <code class="math-expr">F(x) = \\frac{x - a}{b - a} = \\frac{x - 4}{6} \\quad (4 \\le x \\le 10)</code></div>
+            f(x) = 1 / (b - a) = 1 / 6    para 4 ≤ x ≤ 10<br>
+            F(x) = (x - a) / (b - a) = (x - 4) / 6    para 4 ≤ x ≤ 10</div>
 
             <div class="sheet-step"><span class="step-num">4</span> <strong>Cálculo de Media y Desviación Estándar:</strong><br>
-            <code class="math-expr">\\mu = E(X) = \\frac{a + b}{2} = \\frac{4 + 10}{2} = 7 \\text{ días}</code><br>
-            <code class="math-expr">\\sigma^2 = \\frac{(b - a)^2}{12} = \\frac{36}{12} = 3 \\implies \\sigma = \\sqrt{3} \\approx 1.732 \\text{ días}</code></div>
+            μ = E(X) = (a + b) / 2 = (4 + 10) / 2 = 7 días<br>
+            Var(X) = (b - a)² / 12 = 36 / 12 = 3 ⟹ σ = √3 ≈ 1.732 días</div>
 
             <div class="sheet-step"><span class="step-num">5</span> <strong>Cálculo de Probabilidades:</strong><br>
-            <code class="math-expr">P(X \\ge 8) = \\frac{10 - 8}{10 - 4} = \\frac{2}{6} = 0.3333 \\quad (33.33%)</code><br>
-            <code class="math-expr">P(X \\le 6) = \\frac{6 - 4}{10 - 4} = \\frac{2}{6} = 0.3333 \\quad (33.33%)</code></div>
+            P(X ≥ 8) = (10 - 8) / (10 - 4) = 2/6 = 0.3333 (33.33%)<br>
+            P(X ≤ 6) = (6 - 4) / (10 - 4) = 2/6 = 0.3333 (33.33%)</div>
 
             <div class="sheet-step"><span class="step-num">6</span> <strong>Conclusión:</strong><br>
-            <em>"Respuesta: Ambos sucesos son igualmente probables (33.33% cada uno) debido a la simetría de la distribución uniforme respecto a su media μ = 7 días."</em></div>
+            <em>Respuesta: Ambos sucesos son igualmente probables (33.33% cada uno) debido a la simetría de la distribución uniforme respecto a su media μ = 7 días.</em></div>
           </div>
         </div>
       `;
@@ -476,24 +547,27 @@ const App = {
 
         <!-- Qué poner en la hoja del parcial -->
         <div class="mt-2">
-          <h4 style="color:#34d399; margin-bottom:0.5rem;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
-          <div class="sheet-template">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+            <h4 style="color:#34d399; margin:0;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
+            <button class="copy-btn" onclick="App.copySheetText('sheet_gamma', this)">📋 Copiar para mi Carpeta</button>
+          </div>
+          <div class="sheet-template" id="sheet_gamma">
             <div class="sheet-step"><span class="step-num">1</span> <strong>Definición formal de la Variable:</strong><br>
-            <em>"Sea Y: tiempo en segundos hasta la llegada de α = 2 clientes. Y es una V.A. continua."</em></div>
+            <em>Sea Y: tiempo en segundos hasta la llegada de α = 2 clientes. Y es una V.A. continua.</em></div>
 
             <div class="sheet-step"><span class="step-num">2</span> <strong>Parámetros en Segundos:</strong><br>
-            Tasa por segundo: <code>λ = 5/60 = 1/12 clientes/seg</code><br>
-            Parámetro de escala: <code>β = 1/λ = 12 segundos</code> ⟹ <span class="badge badge-primary">Y ~ Gamma(α = 2, β = 12 seg)</span></div>
+            Tasa por segundo: λ = 5/60 = 1/12 clientes/seg<br>
+            Parámetro de escala: β = 1/λ = 12 segundos ⟹ Y ~ Gamma(α = 2, β = 12 seg)</div>
 
             <div class="sheet-step"><span class="step-num">3</span> <strong>Teorema Fundamental Poisson-Gamma (Cátedra UNJu):</strong><br>
-            <code class="math-expr">P(Y \\le t) = P(N_t \\ge \\alpha) = 1 - \\sum_{k=0}^{\\alpha - 1} \\frac{e^{-\\mu} \\mu^k}{k!} \\quad \\text{con } \\mu = \\frac{t}{\\beta}</code></div>
+            P(Y ≤ t) = P(N_t ≥ α) = 1 - ∑ [e^(-μ) · μ^k] / k!    con μ = t / β</div>
 
             <div class="sheet-step"><span class="step-num">4</span> <strong>Sustitución para t = 30 seg (μ = 30 / 12 = 2.5):</strong><br>
-            <code class="math-expr">P(Y \\le 30) = 1 - e^{-2.5}(1 + 2.5) = 1 - 3.5(0.082085) = 0.7127 \\quad (71.27%)</code></div>
+            P(Y ≤ 30) = 1 - e^(-2.5) · (1 + 2.5) = 1 - 3.5 · (0.082085) = 0.7127 (71.27%)</div>
 
             <div class="sheet-step"><span class="step-num">5</span> <strong>Para t = 48 seg (μ = 48 / 12 = 4):</strong><br>
-            <code>P(Y ≤ 48) = 1 - e⁻⁴(1 + 4) = 0.9084</code><br>
-            <code class="math-expr">P(30 \\le Y \\le 48) = P(Y \\le 48) - P(Y \\le 30) = 0.9084 - 0.7127 = 0.1957 \\quad (19.57%)</code></div>
+            P(Y ≤ 48) = 1 - e^(-4) · (1 + 4) = 0.9084<br>
+            P(30 ≤ Y ≤ 48) = P(Y ≤ 48) - P(Y ≤ 30) = 0.9084 - 0.7127 = 0.1957 (19.57%)</div>
           </div>
         </div>
       `;
@@ -517,22 +591,25 @@ const App = {
 
         <!-- Qué poner en la hoja del parcial -->
         <div class="mt-2">
-          <h4 style="color:#34d399; margin-bottom:0.5rem;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
-          <div class="sheet-template">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+            <h4 style="color:#34d399; margin:0;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
+            <button class="copy-btn" onclick="App.copySheetText('sheet_contingency', this)">📋 Copiar para mi Carpeta</button>
+          </div>
+          <div class="sheet-template" id="sheet_contingency">
             <div class="sheet-step"><span class="step-num">1</span> <strong>Cálculo de Incógnitas por Balance de Filas/Columnas:</strong><br>
-            • C = Total A - (18 + 12 + 5) = 37 - 35 = <strong>2</strong><br>
-            • A = Total C - (8 + 4 + 1) = 27 - 13 = <strong>14</strong><br>
-            • B = Total D - (22 + 5 + 3) = 40 - 30 = <strong>10</strong><br>
-            • D = 5 + 3 + 4 + 5 + 7 = <strong>24</strong> (Total Deserción)</div>
+            • C = Total A - (18 + 12 + 5) = 37 - 35 = 2<br>
+            • A = Total C - (8 + 4 + 1) = 27 - 13 = 14<br>
+            • B = Total D - (22 + 5 + 3) = 40 - 30 = 10<br>
+            • D = 5 + 3 + 4 + 5 + 7 = 24 (Total Deserción)</div>
 
-            <div class="sheet-step"><span class="step-num">2</span> <strong>Probabilidad Marginal:</strong> <code>P(Sin Internet) = 13 / 180 = 0.0722 (7.22%)</code></div>
-            <div class="sheet-step"><span class="step-num">3</span> <strong>Probabilidad de Unión Mutuamente Excluyente:</strong> <code>P(D ∪ E) = (40 + 56)/180 = 96/180 = 0.5333</code></div>
-            <div class="sheet-step"><span class="step-num">4</span> <strong>Regla General de la Adición:</strong> <code>P(Ap ∪ C) = P(Ap) + P(C) - P(Ap ∩ C) = (89 + 27 - 14)/180 = 102/180 = 0.5667</code></div>
-            <div class="sheet-step"><span class="step-num">5</span> <strong>Probabilidad Condicional:</strong> <code>P(C | Deserción) = P(C ∩ Des) / P(Des) = 4 / 24 = 1/6 = 0.1667</code></div>
+            <div class="sheet-step"><span class="step-num">2</span> <strong>Probabilidad Marginal:</strong> P(Sin Internet) = 13 / 180 = 0.0722 (7.22%)</div>
+            <div class="sheet-step"><span class="step-num">3</span> <strong>Probabilidad de Unión Mutuamente Excluyente:</strong> P(D ∪ E) = (40 + 56)/180 = 96/180 = 0.5333</div>
+            <div class="sheet-step"><span class="step-num">4</span> <strong>Regla General de la Adición:</strong> P(Ap ∪ C) = P(Ap) + P(C) - P(Ap ∩ C) = (89 + 27 - 14)/180 = 102/180 = 0.5667</div>
+            <div class="sheet-step"><span class="step-num">5</span> <strong>Probabilidad Condicional:</strong> P(C | Deserción) = P(C ∩ Des) / P(Des) = 4 / 24 = 1/6 = 0.1667</div>
             <div class="sheet-step"><span class="step-num">6</span> <strong>Demostración de Independencia (Comisión D y Aprobado):</strong><br>
-            <code>P(D ∩ Ap) = 22 / 180 = 0.1222</code><br>
-            <code>P(D) × P(Ap) = (40/180) × (89/180) = 0.1099</code><br>
-            Como <strong>0.1222 ≠ 0.1099</strong>, los sucesos <strong>NO SON INDEPENDIENTES</strong>.</div>
+            P(D ∩ Ap) = 22 / 180 = 0.1222<br>
+            P(D) × P(Ap) = (40/180) × (89/180) = 0.1099<br>
+            Como 0.1222 ≠ 0.1099, los sucesos NO SON INDEPENDIENTES.</div>
           </div>
         </div>
       `;
@@ -549,8 +626,11 @@ const App = {
 
         <!-- Qué poner en la hoja del parcial -->
         <div class="mt-2">
-          <h4 style="color:#34d399; margin-bottom:0.5rem;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
-          <div class="sheet-template">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+            <h4 style="color:#34d399; margin:0;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
+            <button class="copy-btn" onclick="App.copySheetText('sheet_bayes', this)">📋 Copiar para mi Carpeta</button>
+          </div>
+          <div class="sheet-template" id="sheet_bayes">
             <div class="sheet-step"><span class="step-num">1</span> <strong>Partición del Espacio Muestral (Causas Aᵢ):</strong><br>
             P(Ambulatorio A₁) = 0.40 | P(Magistrales A₂) = 0.35 | P(Alto Costo A₃) = 0.25 (Σ = 1.00)</div>
 
@@ -559,14 +639,14 @@ const App = {
             Con inconvenientes (Sᶜ): P(Sᶜ|A₁) = 0.02, P(Sᶜ|A₂) = 0.01, P(Sᶜ|A₃) = 0.05</div>
 
             <div class="sheet-step"><span class="step-num">3</span> <strong>Teorema de la Probabilidad Total: P(S)</strong><br>
-            <code class="math-expr">P(S) = \\sum_{i=1}^3 P(A_i) \\cdot P(S | A_i) = (0.40)(0.98) + (0.35)(0.99) + (0.25)(0.95) = 0.9760 \\quad (97.60%)</code></div>
+            P(S) = ∑ P(A_i) · P(S | A_i) = (0.40)(0.98) + (0.35)(0.99) + (0.25)(0.95) = 0.9760 (97.60%)</div>
 
             <div class="sheet-step"><span class="step-num">4</span> <strong>Teorema de Bayes: P(Alto Costo A₃ | Sin Inconveniente S)</strong><br>
-            <code class="math-expr">P(A_3 | S) = \\frac{P(A_3) \\cdot P(S | A_3)}{P(S)} = \\frac{0.25 \\cdot 0.95}{0.9760} = \\frac{0.2375}{0.9760} = 0.2433 \\quad (24.33%)</code></div>
+            P(A_3 | S) = [P(A_3) · P(S | A_3)] / P(S) = (0.25 · 0.95) / 0.9760 = 0.2375 / 0.9760 = 0.2433 (24.33%)</div>
 
             <div class="sheet-step"><span class="step-num">5</span> <strong>Teorema de Bayes: P(Ambulatorio A₁ | Con Inconveniente Sᶜ)</strong><br>
             P(Sᶜ) = 1 - 0.9760 = 0.0240<br>
-            <code class="math-expr">P(A_1 | S^c) = \\frac{P(A_1) \\cdot P(S^c | A_1)}{P(S^c)} = \\frac{0.40 \\cdot 0.02}{0.0240} = \\frac{0.0080}{0.0240} = 0.3333 \\quad (33.33%)</code></div>
+            P(A_1 | S^c) = [P(A_1) · P(S^c | A_1)] / P(S^c) = (0.40 · 0.02) / 0.0240 = 0.0080 / 0.0240 = 0.3333 (33.33%)</div>
           </div>
         </div>
       `;
@@ -577,20 +657,18 @@ const App = {
           <span class="badge badge-success">X ~ Exp(β)</span>
         </div>
         <div class="formula-box">
-          <p>Tiempo hasta el primer evento. Media β = 1/λ. Función Acumulada: <code>F(x) = 1 - e^(-x/β)</code>.</p>
+          <p>Tiempo hasta el primer evento. Media β = 1/λ. Función Acumulada: F(x) = 1 - e^(-x/β).</p>
         </div>
       `;
     }
   },
 
-  // Toggle k2 for binomial interval
   toggleBinomialK2() {
     const op = document.getElementById('calc_bin_op').value;
     const row = document.getElementById('calc_bin_k2_row');
     if (row) row.style.display = op === 'between' ? 'block' : 'none';
   },
 
-  // Calculators execution
   runCalcBinomial() {
     const n = parseInt(document.getElementById('calc_bin_n').value);
     const p = parseFloat(document.getElementById('calc_bin_p').value);
@@ -752,20 +830,78 @@ const App = {
             </div>
             <div>${ex.statement}</div>
             <div class="mt-2">
-              <strong style="color:#34d399; font-size:0.88rem; display:block; margin-bottom:0.4rem;">📝 DESARROLLO Y RESOLUCIÓN OFICIAL PARA LA HOJA:</strong>
-              ${ex.solution}
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                <strong style="color:#34d399; font-size:0.88rem;">📝 RESOLUCIÓN OFICIAL PARA LA HOJA:</strong>
+                <button class="copy-btn" onclick="App.copySheetText('exam_sol_${ex.num}', this)">📋 Copiar</button>
+              </div>
+              <div id="exam_sol_${ex.num}">
+                ${ex.solution}
+              </div>
             </div>
           </div>
         `).join('')}
       </div>
     `;
+    setTimeout(() => this.renderMath(), 50);
   },
 
   openDistInCalculator(distId) {
     this.navigateTo('calculator');
     this.selectDist(distId);
+  },
+
+  // -------------------------------------------------------------
+  // CAMERA SCANNER & URGENCY MODAL
+  // -------------------------------------------------------------
+  openCameraModal() {
+    const modal = document.getElementById('cameraModal');
+    if (modal) modal.classList.add('active');
+  },
+
+  closeCameraModal() {
+    const modal = document.getElementById('cameraModal');
+    if (modal) modal.classList.remove('active');
+    this.stopCameraStream();
+  },
+
+  stopCameraStream() {
+    if (this.cameraStream) {
+      this.cameraStream.getTracks().forEach(track => track.stop());
+      this.cameraStream = null;
+    }
+    const video = document.getElementById('liveVideo');
+    if (video) video.style.display = 'none';
+  },
+
+  handleImageSelected(input) {
+    if (!input || !input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      const img = document.getElementById('capturedImage');
+      const placeholder = document.getElementById('cameraPlaceholderText');
+      const video = document.getElementById('liveVideo');
+      const resolver = document.getElementById('cameraResolverSection');
+
+      if (video) video.style.display = 'none';
+      if (placeholder) placeholder.style.display = 'none';
+      if (img) {
+        img.src = e.target.result;
+        img.style.display = 'block';
+      }
+      if (resolver) resolver.style.display = 'block';
+    };
+
+    reader.readAsDataURL(file);
+  },
+
+  quickSolveFromCamera(distId) {
+    this.closeCameraModal();
+    this.navigateTo('calculator');
+    this.selectDist(distId);
   }
 };
 
-// Initialize
+// Auto Initialize
 document.addEventListener('DOMContentLoaded', () => App.init());

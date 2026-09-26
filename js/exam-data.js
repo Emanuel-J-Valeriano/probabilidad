@@ -66,14 +66,14 @@ const ExamData2025 = [
         solution: `
           <div class="sheet-template">
             <div class="sheet-step"><span class="step-num">b</span> <strong>Teorema de la Probabilidad Total: P(S)</strong><br>
-            <code class="math-expr">P(S) = (0.40 × 0.98) + (0.35 × 0.99) + (0.25 × 0.95) = 0.3920 + 0.3465 + 0.2375 = 0.9760 \\quad (97.60%)</code></div>
+            P(S) = ∑ P(A_i) · P(S | A_i) = (0.40 × 0.98) + (0.35 × 0.99) + (0.25 × 0.95) = 0.3920 + 0.3465 + 0.2375 = <strong>0.9760 (97.60%)</strong></div>
 
             <div class="sheet-step"><span class="step-num">c</span> <strong>Teorema de Bayes: P(Alto Costo A₃ | Sin Inconveniente S)</strong><br>
-            <code class="math-expr">P(A_3 | S) = \\frac{P(A_3) \\cdot P(S | A_3)}{P(S)} = \\frac{0.25 \\times 0.95}{0.9760} = \\frac{0.2375}{0.9760} = 0.2433 \\quad (24.33%)</code></div>
+            P(A₃ | S) = [P(A₃) · P(S | A₃)] / P(S) = (0.25 × 0.95) / 0.9760 = 0.2375 / 0.9760 = <strong>0.2433 (24.33%)</strong></div>
 
             <div class="sheet-step"><span class="step-num">d</span> <strong>Teorema de Bayes: P(Ambulatorio A₁ | Con Inconveniente Sᶜ)</strong><br>
             P(Sᶜ) = 1 - 0.9760 = 0.0240<br>
-            <code class="math-expr">P(A_1 | S^c) = \\frac{P(A_1) \\cdot P(S^c | A_1)}{P(S^c)} = \\frac{0.40 \\times 0.02}{0.0240} = \\frac{0.0080}{0.0240} = \\frac{1}{3} = 0.3333 \\quad (33.33%)</code></div>
+            P(A₁ | Sᶜ) = [P(A₁) · P(Sᶜ | A₁)] / P(Sᶜ) = (0.40 × 0.02) / 0.0240 = 0.0080 / 0.0240 = 1/3 = <strong>0.3333 (33.33%)</strong></div>
           </div>
         `
       },
@@ -89,11 +89,11 @@ const ExamData2025 = [
         solution: `
           <div class="sheet-template">
             <div class="sheet-step"><span class="step-num">a</span> <strong>Binomial Negativa (Pascal): X ~ BN(r = 4, p = 0.80)</strong><br>
-            <code class="math-expr">P(X = 6) = \\binom{6 - 1}{4 - 1} (0.80)^4 (0.20)^{6 - 4} = \\binom{5}{3} (0.80)^4 (0.20)^2</code><br>
-            <code class="math-expr">P(X = 6) = 10 \\cdot 0.4096 \\cdot 0.04 = 0.16384 \\quad (16.38%)</code></div>
+            P(X = 6) = C(6 - 1, 4 - 1) · (0.80)⁴ · (0.20)⁶⁻⁴ = C(5, 3) · (0.80)⁴ · (0.20)²<br>
+            P(X = 6) = 10 · 0.4096 · 0.04 = <strong>0.1638 (16.38%)</strong></div>
 
             <div class="sheet-step"><span class="step-num">b</span> <strong>Binomial: Y ~ B(n = 10, p = 0.80)</strong><br>
-            • P(Y = 8) = C(10, 8)(0.80)⁸(0.20)² = 45 × 0.167772 × 0.04 = <strong>0.3020 (30.20%)</strong><br>
+            • P(Y = 8) = C(10, 8) · (0.80)⁸ · (0.20)² = 45 × 0.167772 × 0.04 = <strong>0.3020 (30.20%)</strong><br>
             • P(Y ≥ 6) = P(6) + P(7) + P(8) + P(9) + P(10) = 0.0881 + 0.2013 + 0.3020 + 0.2684 + 0.1074 = <strong>0.9672 (96.72%)</strong><br>
             <strong>Conclusión:</strong> Es <em>mucho más probable</em> que aprueben 6 o más alumnos (96.72% frente a 30.20%).</div>
           </div>
@@ -112,16 +112,16 @@ const ExamData2025 = [
         solution: `
           <div class="sheet-template">
             <div class="sheet-step"><span class="step-num">a-b</span> <strong>X ~ Poisson(λ = 5 clientes/min)</strong><br>
-            <code class="math-expr">P(X = 7) = \\frac{e^{-5} \\cdot 5^7}{7!} = \\frac{(0.0067379) \\cdot 78125}{5040} = 0.1044 \\quad (10.44%)</code></div>
+            P(X = 7) = (e⁻⁵ · 5⁷) / 7! = (0.006738 · 78125) / 5040 = <strong>0.1044 (10.44%)</strong></div>
 
             <div class="sheet-step"><span class="step-num">c</span> <strong>En 30 seg (t = 0.5 min ⟹ μ = 2.5):</strong><br>
             P(3 ≤ X ≤ 7) = P(3) + P(4) + P(5) + P(6) + P(7) = <strong>0.4520 (45.20%)</strong></div>
 
             <div class="sheet-step"><span class="step-num">d-e</span> <strong>Distribución Gamma: Y ~ Gamma(α = 2, β = 12 seg)</strong><br>
-            Por el Teorema Poisson-Gamma de la cátedra: <code>P(Y ≤ t) = P(N_t ≥ 2) = 1 - P(0) - P(1)</code> con μ = t / 12:<br>
-            • Para t = 30 seg (μ = 2.5): <code>P(Y ≤ 30) = 1 - e⁻²·⁵(1 + 2.5) = 1 - 3.5(0.082085) = 0.7127 (71.27%)</code><br>
-            • Para t = 48 seg (μ = 4.0): <code>P(Y ≤ 48) = 1 - e⁻⁴(1 + 4) = 0.9084</code><br>
-            ⟹ <code>P(30 ≤ Y ≤ 48) = 0.9084 - 0.7127 = 0.1957 (19.57%)</code></div>
+            Por el Teorema Poisson-Gamma de la cátedra: P(Y ≤ t) = P(N_t ≥ 2) = 1 - P(0) - P(1) con μ = t / 12:<br>
+            • Para t = 30 seg (μ = 2.5): P(Y ≤ 30) = 1 - e⁻²·⁵(1 + 2.5) = 1 - 3.5(0.082085) = <strong>0.7127 (71.27%)</strong><br>
+            • Para t = 48 seg (μ = 4.0): P(Y ≤ 48) = 1 - e⁻⁴(1 + 4) = 0.9084<br>
+            ⟹ P(30 ≤ Y ≤ 48) = P(Y ≤ 48) - P(Y ≤ 30) = 0.9084 - 0.7127 = <strong>0.1957 (19.57%)</strong></div>
           </div>
         `
       },
@@ -136,8 +136,8 @@ const ExamData2025 = [
         solution: `
           <div class="sheet-template">
             <div class="sheet-step"><span class="step-num">a</span> <strong>X ~ N(μ = 8.2, σ = 1.1). Estandarización a Z:</strong><br>
-            z₁ = (7 - 8.2)/1.1 = -1.09 | z₂ = (10 - 8.2)/1.1 = 1.64<br>
-            <code class="math-expr">P(7 \\le X \\le 10) = \\Phi(1.64) - \\Phi(-1.09) = 0.9495 - (1 - 0.8621) = 0.9495 - 0.1379 = 0.8116 \\quad (81.16%)</code></div>
+            z₁ = (7 - 8.2) / 1.1 = -1.09 | z₂ = (10 - 8.2) / 1.1 = 1.64<br>
+            P(7 ≤ X ≤ 10) = Φ(1.64) - Φ(-1.09) = 0.9495 - (1 - 0.8621) = 0.9495 - 0.1379 = <strong>0.8116 (81.16%)</strong></div>
 
             <div class="sheet-step"><span class="step-num">b</span> <strong>Recomendación:</strong> Como 81.16% > 75%, <strong>SE RECOMIENDA contratar el servicio extra</strong>.</div>
             <div class="sheet-step"><span class="step-num">c</span> <strong>Esperados en n = 20:</strong> E = n · P = 20 × 0.8116 = <strong>16.23 ≈ 16 encuentros</strong>.</div>
@@ -181,7 +181,7 @@ const ExamData2025 = [
         solution: `
           <div class="sheet-template">
             <div class="sheet-step"><span class="step-num">1</span> <strong>Hipergeométrica: N = 1140, M = 800 (manual), n = 10, k = 4</strong><br>
-            <code class="math-expr">P(X = 4) = \\frac{\\binom{800}{4} \\binom{340}{6}}{\\binom{1140}{10}} = 0.0055 \\quad (0.55%)</code></div>
+            P(X = 4) = [C(800, 4) · C(340, 6)] / C(1140, 10) = <strong>0.0055 (0.55%)</strong></div>
           </div>
         `
       },
@@ -209,7 +209,7 @@ const ExamData2025 = [
         solution: `
           <div class="sheet-template">
             <div class="sheet-step"><span class="step-num">a</span> <strong>X ~ H(N = 47, A = 23, n = 7):</strong><br>
-            <code class="math-expr">P(X = 2) = \\frac{\\binom{23}{2} \\binom{24}{5}}{\\binom{47}{7}} = \\frac{253 \\times 42504}{62891499} = 0.1710 \\quad (17.10%)</code></div>
+            P(X = 2) = [C(23, 2) · C(24, 5)] / C(47, 7) = (253 × 42504) / 62891499 = <strong>0.1710 (17.10%)</strong></div>
             <div class="sheet-step"><span class="step-num">b</span> <strong>P(X ≥ 2) = 1 - P(0) - P(1) = 1 - (0.0055 + 0.0492) = 0.9453 (94.53%)</strong></div>
             <div class="sheet-step"><span class="step-num">c</span> <strong>E(X) = n · (A / N) = 7 · (23 / 47) = 3.43 surubíes</strong></div>
           </div>
@@ -239,7 +239,7 @@ const ExamData2025 = [
             <div class="sheet-step"><span class="step-num">b</span> <strong>P(0.90 < X < 1.30):</strong> z₁ = -2.00, z₂ = 3.00 ⟹ Φ(3.00) - Φ(-2.00) = 0.9987 - 0.0228 = <strong>0.9759 (97.59%)</strong></div>
             <div class="sheet-step"><span class="step-num">c</span> <strong>Percentil 25 (P(X < x) = 0.25):</strong><br>
             De tabla normal: z = -0.6745<br>
-            <code class="math-expr">x = \\mu + z \\cdot \\sigma = 1.06 + (-0.6745) \\times 0.08 = 1.0060 \\text{ mg/ml}</code></div>
+            x = μ + z · σ = 1.06 + (-0.6745) × 0.08 = <strong>1.0060 mg/ml</strong></div>
           </div>
         `
       }
