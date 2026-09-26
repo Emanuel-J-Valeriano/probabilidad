@@ -1,31 +1,21 @@
 /**
- * Main Controller Application - Probabilidad & Estadística UNJu
+ * Main Controller Application - Probabilidad & Estadística UNJu (Parciales 2025)
+ * Streamlined 2-Tab Architecture: Calculadora & Hoja de Examen + Parciales 2025 Resueltos
  */
 const App = {
-  activeTab: 'home',
-  activeSubsolver: 'contingency',
-  activeDiscreteModel: 'binomial',
-  activeContinuousModel: 'normal',
-  contingencyData: null,
-  deferredInstallPrompt: null,
+  activeTab: 'calculator',
+  currentDist: 'binomial',
+  currentExam: 'parcial-2025-a',
 
   init() {
     this.initTheme();
     this.initPWA();
-    this.renderTheory();
+    this.selectDist('binomial');
     this.renderExams();
-    this.renderStatTables();
-    this.loadContingencyPreset('parcial1');
-    this.loadBayesPreset('farmacias');
-    this.switchDiscreteModel('binomial');
-    this.switchContinuousModel('normal');
     this.bindEvents();
-    console.log("App Probabilidad UNJu initialized.");
+    console.log("App Probabilidad 2025 initialized.");
   },
 
-  // -------------------------------------------------------------
-  // Theme & PWA
-  // -------------------------------------------------------------
   initTheme() {
     const saved = localStorage.getItem('prob_unju_theme') || 'dark';
     document.documentElement.dataset.theme = saved;
@@ -36,64 +26,23 @@ const App = {
     const next = current === 'dark' ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
     localStorage.setItem('prob_unju_theme', next);
-    // Redraw charts if visible
-    if (this.activeTab === 'solvers') {
-      if (this.activeSubsolver === 'continuous') this.drawNormalCurve();
-      if (this.activeSubsolver === 'bayes') this.drawBayesTree();
-      if (this.activeSubsolver === 'contingency') this.drawContingencyChart();
-    }
   },
 
   initPWA() {
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(err => {
-          console.warn('SW registration skipped:', err);
-        });
-      });
-    }
-
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      this.deferredInstallPrompt = e;
-      const btn = document.getElementById('installBtn');
-      if (btn) btn.style.display = 'inline-flex';
-    });
-
-    const installBtn = document.getElementById('installBtn');
-    if (installBtn) {
-      installBtn.addEventListener('click', async () => {
-        if (!this.deferredInstallPrompt) return;
-        this.deferredInstallPrompt.prompt();
-        const { outcome } = await this.deferredInstallPrompt.userChoice;
-        if (outcome === 'accepted') {
-          installBtn.style.display = 'none';
-        }
-        this.deferredInstallPrompt = null;
+        navigator.serviceWorker.register('sw.js').catch(err => console.warn(err));
       });
     }
   },
 
   bindEvents() {
     const themeBtn = document.getElementById('themeToggleBtn');
-    if (themeBtn) {
-      themeBtn.addEventListener('click', () => this.toggleTheme());
-    }
-
-    // Window resize redraws canvas
-    window.addEventListener('resize', () => {
-      if (this.activeTab === 'solvers') {
-        if (this.activeSubsolver === 'continuous' && this.activeContinuousModel === 'normal') {
-          this.drawNormalCurve();
-        } else if (this.activeSubsolver === 'bayes') {
-          this.drawBayesTree();
-        }
-      }
-    });
+    if (themeBtn) themeBtn.addEventListener('click', () => this.toggleTheme());
   },
 
   // -------------------------------------------------------------
-  // Navigation
+  // Navigation between the 2 tabs
   // -------------------------------------------------------------
   navigateTo(tabId) {
     this.activeTab = tabId;
@@ -101,1767 +50,722 @@ const App = {
     const target = document.getElementById(`tab-${tabId}`);
     if (target) target.classList.add('active');
 
-    // Update desktop nav
+    // Desktop nav
     document.querySelectorAll('.desktop-nav .nav-link').forEach(el => {
       el.classList.toggle('active', el.dataset.tab === tabId);
     });
 
-    // Update mobile nav
+    // Mobile bottom nav
     document.querySelectorAll('.bottom-nav .bottom-nav-item').forEach(el => {
       el.classList.toggle('active', el.dataset.tab === tabId);
     });
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    // Handle canvas redraws when switching to solvers
-    if (tabId === 'solvers') {
-      setTimeout(() => {
-        if (this.activeSubsolver === 'continuous' && this.activeContinuousModel === 'normal') {
-          this.drawNormalCurve();
-        } else if (this.activeSubsolver === 'bayes') {
-          this.drawBayesTree();
-        }
-      }, 100);
-    }
   },
 
-  switchSubsolver(subId) {
-    this.activeSubsolver = subId;
-    document.querySelectorAll('.pills-nav .pill-item').forEach(el => {
-      el.classList.toggle('active', el.dataset.subsolver === subId);
+  // -------------------------------------------------------------
+  // TAB 1: CALCULADORA & QUÉ PONER EN LA HOJA
+  // -------------------------------------------------------------
+  selectDist(distId) {
+    this.currentDist = distId;
+    document.querySelectorAll('#distSelectorPills .pill-item').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.dist === distId);
     });
-    document.querySelectorAll('.subsolver-view').forEach(el => el.style.display = 'none');
-    const target = document.getElementById(`subsolver-${subId}`);
-    if (target) target.style.display = 'block';
 
-    if (subId === 'continuous' && this.activeContinuousModel === 'normal') {
-      setTimeout(() => this.drawNormalCurve(), 50);
-    } else if (subId === 'bayes') {
-      setTimeout(() => this.drawBayesTree(), 50);
-    }
+    this.renderDistCard(distId);
   },
 
-  openSolver(subsolverId, presetId) {
-    this.navigateTo('solvers');
-    this.switchSubsolver(subsolverId);
+  renderDistCard(distId) {
+    const container = document.getElementById('activeDistCard');
+    if (!container) return;
 
-    if (subsolverId === 'contingency') {
-      const select = document.getElementById('contingencyPresetSelect');
-      if (select) {
-        select.value = presetId;
-        this.loadContingencyPreset(presetId);
-      }
-    } else if (subsolverId === 'bayes') {
-      const select = document.getElementById('bayesPresetSelect');
-      if (select) {
-        select.value = presetId;
-        this.loadBayesPreset(presetId);
-      }
-    } else if (subsolverId === 'discrete') {
-      if (presetId === 'negativeBinomial') {
-        document.getElementById('discreteModelSelect').value = 'negativeBinomial';
-        this.switchDiscreteModel('negativeBinomial');
-      } else if (presetId === 'poissonGamma') {
-        document.getElementById('discreteModelSelect').value = 'poisson';
-        this.switchDiscreteModel('poisson');
-      }
-    } else if (subsolverId === 'continuous') {
-      if (presetId === 'normal') {
-        document.getElementById('continuousModelSelect').value = 'normal';
-        this.switchContinuousModel('normal');
-      } else if (presetId === 'uniform') {
-        document.getElementById('continuousModelSelect').value = 'uniform';
-        this.switchContinuousModel('uniform');
-      }
-    }
-  },
-
-  // -------------------------------------------------------------
-  // Theory Tab
-  // -------------------------------------------------------------
-  renderTheory() {
-    const container = document.getElementById('theoryContainer');
-    if (!container || !TheoryData) return;
-
-    container.innerHTML = TheoryData.map(unit => `
-      <div class="exam-accordion" id="accordion-${unit.id}">
-        <div class="exam-accordion-header" onclick="App.toggleAccordion('${unit.id}')">
-          <div style="display:flex; align-items:center; gap:0.6rem;">
-            <span style="font-size:1.3rem;">${unit.icon}</span>
-            <span>${unit.title}</span>
+    if (distId === 'binomial') {
+      container.innerHTML = `
+        <div class="guide-card-header">
+          <div class="guide-card-title">
+            <span>🎲</span>
+            <span>Distribución Binomial</span>
+            <span class="badge badge-primary">TP 3 - Discretas</span>
           </div>
-          <span id="chevron-${unit.id}">▼</span>
+          <span class="badge badge-success" style="font-size:0.95rem; font-family:monospace;">X ~ B(n, p)</span>
         </div>
-        <div class="exam-accordion-body" id="body-${unit.id}">
-          <p class="hero-desc" style="margin-bottom:1rem;">${unit.summary}</p>
-          ${unit.sections.map(sec => `
-            <div class="exercise-card">
-              <h4 style="margin-bottom:0.5rem; color:var(--primary); font-size:1rem;">${sec.title}</h4>
-              <div>${sec.content}</div>
+        <p class="hero-desc">Número de éxitos en n ensayos independientes con probabilidad constante p (con reposición).</p>
+
+        <!-- Calculadora Interactiva -->
+        <div class="calc-mini-box">
+          <h4 style="color:var(--primary); margin-bottom:0.6rem;">🧮 Calculadora de Probabilidad:</h4>
+          <div class="grid-4">
+            <div><label class="form-label">Ensayos (n)</label><input type="number" id="calc_bin_n" class="form-control" value="16" min="1"></div>
+            <div><label class="form-label">Prob. Éxito (p)</label><input type="number" step="0.05" id="calc_bin_p" class="form-control" value="0.30" min="0" max="1"></div>
+            <div><label class="form-label">Operación</label>
+              <select id="calc_bin_op" class="form-control" onchange="App.toggleBinomialK2()">
+                <option value="eq">P(X = k)</option>
+                <option value="geq">P(X ≥ k)</option>
+                <option value="leq">P(X ≤ k)</option>
+                <option value="between">P(k1 ≤ X ≤ k2)</option>
+              </select>
             </div>
-          `).join('')}
+            <div><label class="form-label">Valor k</label><input type="number" id="calc_bin_k" class="form-control" value="4"></div>
+          </div>
+          <div id="calc_bin_k2_row" class="grid-2 mt-1" style="display:none;">
+            <div><label class="form-label">Límite k2</label><input type="number" id="calc_bin_k2" class="form-control" value="10"></div>
+          </div>
+          <button class="btn btn-primary mt-2" onclick="App.runCalcBinomial()">⚡ Calcular Probabilidad</button>
+          <div id="calcRes_binomial" class="result-card mt-2" style="display:none;"></div>
         </div>
-      </div>
-    `).join('');
-  },
 
-  toggleAccordion(id) {
-    const body = document.getElementById(`body-${id}`);
-    const chevron = document.getElementById(`chevron-${id}`);
-    if (!body) return;
-    const isHidden = body.style.display === 'none';
-    body.style.display = isHidden ? 'block' : 'none';
-    if (chevron) chevron.textContent = isHidden ? '▼' : '▶';
-  },
+        <!-- Ejemplo Mínimo del Parcial 2025 -->
+        <div class="formula-box highlight mt-2">
+          <strong style="color:var(--secondary);">📌 Ejemplo Típico del Parcial 2025 V4 (Temario B, Ej 2):</strong>
+          <p style="margin-top:0.3rem;"><em>"El 30% de los alumnos de una facultad se levanta temprano para estudiar (p = 0.30). Se encuesta a 16 alumnos (n = 16). Calcule la probabilidad de que exactamente 4 se levanten temprano, la probabilidad de que más de 8 lo hagan, y entre 6 y 10."</em></p>
+        </div>
 
-  filterTheory() {
-    const term = (document.getElementById('theorySearchInput').value || '').toLowerCase().trim();
-    document.querySelectorAll('#theoryContainer .exam-accordion').forEach(card => {
-      const text = card.textContent.toLowerCase();
-      card.style.display = text.includes(term) ? 'block' : 'none';
-    });
-  },
+        <!-- Qué poner en la hoja del parcial -->
+        <div class="mt-2">
+          <h4 style="color:#34d399; margin-bottom:0.5rem;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
+          <div class="sheet-template">
+            <div class="sheet-step"><span class="step-num">1</span> <strong>Definición formal de la Variable:</strong><br>
+            <em>"Sea X: número de alumnos que se levantan temprano en una muestra de n = 16 alumnos encuestados. X es una variable aleatoria discreta."</em></div>
 
-  // -------------------------------------------------------------
-  // Contingency Table Solver
-  // -------------------------------------------------------------
-  loadContingencyPreset(key) {
-    let preset;
-    if (key === 'parcial1') {
-      preset = ExamData[0].exercises[0].preset;
-    } else if (key === 'parcial2') {
-      preset = ExamData[1].exercises[0].preset;
-    } else if (key === 'parcial4') {
-      preset = ExamData[3].exercises[0].preset;
+            <div class="sheet-step"><span class="step-num">2</span> <strong>Modelo y Parámetros:</strong><br>
+            <span class="badge badge-primary">X ~ B(n = 16, p = 0.30)</span> con q = 1 - p = 0.70</div>
+
+            <div class="sheet-step"><span class="step-num">3</span> <strong>Función de Probabilidad Puntual:</strong><br>
+            <code class="math-expr">P(X = x) = \\binom{n}{x} p^x (1 - p)^{n - x} \\quad \\text{para } x = 0, 1, ..., n</code></div>
+
+            <div class="sheet-step"><span class="step-num">4</span> <strong>Sustitución Numérica para exactamente 4 alumnos P(X = 4):</strong><br>
+            <code class="math-expr">P(X = 4) = \\binom{16}{4} (0.30)^4 (0.70)^{12} = 1820 \\cdot (0.0081) \\cdot (0.01384) = 0.2040 \\quad (20.40%)</code></div>
+
+            <div class="sheet-step"><span class="step-num">5</span> <strong>Sustitución para más de 8 alumnos P(X > 8):</strong><br>
+            <code class="math-expr">P(X > 8) = 1 - P(X \\le 8) = 1 - 0.9743 = 0.0257 \\quad (2.57%)</code></div>
+
+            <div class="sheet-step"><span class="step-num">6</span> <strong>Esperanza y Varianza:</strong><br>
+            <code>E(X) = n · p = 16 × 0.30 = 4.8 alumnos</code><br>
+            <code>Var(X) = n · p · q = 16 × 0.30 × 0.70 = 3.36</code> ⟹ <code>σ = √3.36 ≈ 1.833</code></div>
+
+            <div class="sheet-step"><span class="step-num">7</span> <strong>Conclusión redactada:</strong><br>
+            <em>"Respuesta: La probabilidad de que exactamente 4 alumnos se levanten temprano es del 20.40%, y el valor esperado es de 4.8 alumnos."</em></div>
+          </div>
+        </div>
+      `;
+    } else if (distId === 'negativeBinomial') {
+      container.innerHTML = `
+        <div class="guide-card-header">
+          <div class="guide-card-title">
+            <span>🎯</span>
+            <span>Distribución Binomial Negativa (Pascal)</span>
+            <span class="badge badge-primary">TP 3 - Discretas</span>
+          </div>
+          <span class="badge badge-success" style="font-size:0.95rem; font-family:monospace;">X ~ BN(r, p)</span>
+        </div>
+        <p class="hero-desc">Número total de ensayos independientes necesarios (x) hasta obtener r éxitos. El último ensayo SIEMPRE es un éxito.</p>
+
+        <!-- Calculadora -->
+        <div class="calc-mini-box">
+          <h4 style="color:var(--primary); margin-bottom:0.6rem;">🧮 Calculadora Binomial Negativa:</h4>
+          <div class="grid-3">
+            <div><label class="form-label">Éxitos deseados (r)</label><input type="number" id="calc_nb_r" class="form-control" value="4" min="1"></div>
+            <div><label class="form-label">Total ensayos (x)</label><input type="number" id="calc_nb_x" class="form-control" value="6" min="1"></div>
+            <div><label class="form-label">Prob. Éxito (p)</label><input type="number" step="0.05" id="calc_nb_p" class="form-control" value="0.80" min="0" max="1"></div>
+          </div>
+          <button class="btn btn-primary mt-2" onclick="App.runCalcNegativeBinomial()">⚡ Calcular P(X = x)</button>
+          <div id="calcRes_negativeBinomial" class="result-card mt-2" style="display:none;"></div>
+        </div>
+
+        <!-- Ejemplo Mínimo del Parcial 2025 -->
+        <div class="formula-box highlight mt-2">
+          <strong style="color:var(--secondary);">📌 Ejemplo Exacto del Parcial 2025 (Temario A, Ej 3a):</strong>
+          <p style="margin-top:0.3rem;"><em>"El 80% de los alumnos cursó la materia este año (p = 0.80). Si se entrevista alumnos que se presentan a rendir en diciembre, ¿cuál es la probabilidad de que el sexto alumno entrevistado (x = 6) sea el cuarto (r = 4) que cursó este año?"</em></p>
+        </div>
+
+        <!-- Qué poner en la hoja del parcial -->
+        <div class="mt-2">
+          <h4 style="color:#34d399; margin-bottom:0.5rem;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
+          <div class="sheet-template">
+            <div class="sheet-step"><span class="step-num">1</span> <strong>Definición formal de la Variable:</strong><br>
+            <em>"Sea X: número total de alumnos entrevistados hasta encontrar r = 4 alumnos que cursaron la materia este año. X es una variable aleatoria discreta."</em></div>
+
+            <div class="sheet-step"><span class="step-num">2</span> <strong>Identificación del Modelo y Parámetros:</strong><br>
+            <span class="badge badge-primary">X ~ BN(r = 4, p = 0.80)</span> (Distribución Binomial Negativa o de Pascal).</div>
+
+            <div class="sheet-step"><span class="step-num">3</span> <strong>Función de Probabilidad Puntual:</strong><br>
+            <code class="math-expr">P(X = x) = \\binom{x - 1}{r - 1} p^r (1 - p)^{x - r} \\quad \\text{para } x = r, r+1, r+2, ...</code></div>
+
+            <div class="sheet-step"><span class="step-num">4</span> <strong>Sustitución para x = 6 y r = 4:</strong><br>
+            <code class="math-expr">P(X = 6) = \\binom{6 - 1}{4 - 1} (0.80)^4 (0.20)^{6 - 4} = \\binom{5}{3} (0.80)^4 (0.20)^2</code><br>
+            <code class="math-expr">\\binom{5}{3} = \\frac{5 \\cdot 4 \\cdot 3}{3 \\cdot 2 \\cdot 1} = 10</code><br>
+            <code class="math-expr">P(X = 6) = 10 \\cdot 0.4096 \\cdot 0.04 = 0.16384 \\quad (16.38%)</code></div>
+
+            <div class="sheet-step"><span class="step-num">5</span> <strong>Esperanza Matemática:</strong><br>
+            <code>E(X) = r / p = 4 / 0.80 = 5 alumnos a entrevistar</code></div>
+
+            <div class="sheet-step"><span class="step-num">6</span> <strong>Conclusión redactada:</strong><br>
+            <em>"Respuesta: La probabilidad de que el sexto alumno entrevistado sea el cuarto que cursó este año es del 16.38%."</em></div>
+          </div>
+        </div>
+      `;
+    } else if (distId === 'hypergeometric') {
+      container.innerHTML = `
+        <div class="guide-card-header">
+          <div class="guide-card-title">
+            <span>🐟</span>
+            <span>Distribución Hipergeométrica</span>
+            <span class="badge badge-primary">TP 3 - Discretas</span>
+          </div>
+          <span class="badge badge-success" style="font-size:0.95rem; font-family:monospace;">X ~ H(N, A, n)</span>
+        </div>
+        <p class="hero-desc">Muestreo <strong>SIN REPOSICIÓN</strong> de tamaño n en una población finita N que contiene A éxitos.</p>
+
+        <!-- Calculadora -->
+        <div class="calc-mini-box">
+          <h4 style="color:var(--primary); margin-bottom:0.6rem;">🧮 Calculadora Hipergeométrica:</h4>
+          <div class="grid-4">
+            <div><label class="form-label">Población (N)</label><input type="number" id="calc_hyp_N" class="form-control" value="47"></div>
+            <div><label class="form-label">Éxitos Totales (A)</label><input type="number" id="calc_hyp_A" class="form-control" value="23"></div>
+            <div><label class="form-label">Muestra (n)</label><input type="number" id="calc_hyp_n" class="form-control" value="7"></div>
+            <div><label class="form-label">Éxitos Muestra (k)</label><input type="number" id="calc_hyp_k" class="form-control" value="2"></div>
+          </div>
+          <button class="btn btn-primary mt-2" onclick="App.runCalcHypergeometric()">⚡ Calcular Probabilidad</button>
+          <div id="calcRes_hypergeometric" class="result-card mt-2" style="display:none;"></div>
+        </div>
+
+        <!-- Ejemplo Mínimo del Parcial 2025 -->
+        <div class="formula-box highlight mt-2">
+          <strong style="color:var(--secondary);">📌 Ejemplo Exacto del Parcial 2025 V4 (Temario B, Ej 3):</strong>
+          <p style="margin-top:0.3rem;"><em>"En un criadero hay 47 peces, 23 de los cuales son surubíes. Un pescador captura 7 peces al azar sin reemplazo. a) ¿P(exactamente 2 surubíes)? b) ¿P(por lo menos 2)? c) ¿Número esperado de surubíes?"</em></p>
+        </div>
+
+        <!-- Qué poner en la hoja del parcial -->
+        <div class="mt-2">
+          <h4 style="color:#34d399; margin-bottom:0.5rem;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
+          <div class="sheet-template">
+            <div class="sheet-step"><span class="step-num">1</span> <strong>Definición formal de la Variable:</strong><br>
+            <em>"Sea X: número de surubíes obtenidos en la muestra de tamaño n = 7 capturados sin reemplazo de una población total N = 47. X es una V.A. discreta."</em></div>
+
+            <div class="sheet-step"><span class="step-num">2</span> <strong>Modelo y Parámetros:</strong><br>
+            <span class="badge badge-primary">X ~ H(N = 47, A = 23, n = 7)</span> con N - A = 24 peces que no son surubíes.</div>
+
+            <div class="sheet-step"><span class="step-num">3</span> <strong>Función de Probabilidad Hipergeométrica:</strong><br>
+            <code class="math-expr">P(X = x) = \\frac{\\binom{A}{x} \\binom{N - A}{n - x}}{\\binom{N}{n}}</code></div>
+
+            <div class="sheet-step"><span class="step-num">4</span> <strong>Sustitución para exactamente 2 surubíes P(X = 2):</strong><br>
+            <code class="math-expr">P(X = 2) = \\frac{\\binom{23}{2} \\binom{24}{5}}{\\binom{47}{7}} = \\frac{253 \\cdot 42504}{62891499} = \\frac{10753512}{62891499} = 0.1710 \\quad (17.10%)</code></div>
+
+            <div class="sheet-step"><span class="step-num">5</span> <strong>Por lo menos 2 surubíes P(X ≥ 2):</strong><br>
+            <code>P(X ≥ 2) = 1 - P(X = 0) - P(X = 1) = 1 - (0.0055 + 0.0492) = 0.9453 (94.53%)</code></div>
+
+            <div class="sheet-step"><span class="step-num">6</span> <strong>Número esperado de surubíes:</strong><br>
+            <code class="math-expr">E(X) = n \\cdot \\frac{A}{N} = 7 \\cdot \\frac{23}{47} = \\frac{161}{47} = 3.4255 \\approx 3.43 \\text{ surubíes}</code></div>
+
+            <div class="sheet-step"><span class="step-num">7</span> <strong>Conclusión:</strong><br>
+            <em>"Respuesta: La probabilidad de capturar exactamente 2 surubíes es del 17.10%, y el número esperado es de aproximadamente 3.43 surubíes."</em></div>
+          </div>
+        </div>
+      `;
+    } else if (distId === 'poisson') {
+      container.innerHTML = `
+        <div class="guide-card-header">
+          <div class="guide-card-title">
+            <span>⏱️</span>
+            <span>Distribución de Poisson</span>
+            <span class="badge badge-primary">TP 3 - Discretas</span>
+          </div>
+          <span class="badge badge-success" style="font-size:0.95rem; font-family:monospace;">X ~ Poisson(μ = λ · t)</span>
+        </div>
+        <p class="hero-desc">Número de eventos en un intervalo de tiempo continuo t con tasa media constante λ.</p>
+
+        <!-- Calculadora -->
+        <div class="calc-mini-box">
+          <h4 style="color:var(--primary); margin-bottom:0.6rem;">🧮 Calculadora de Poisson:</h4>
+          <div class="grid-4">
+            <div><label class="form-label">Tasa λ</label><input type="number" step="0.5" id="calc_poi_lambda" class="form-control" value="5"></div>
+            <div><label class="form-label">Intervalo t</label><input type="number" step="0.1" id="calc_poi_t" class="form-control" value="1.0"></div>
+            <div><label class="form-label">Operación</label>
+              <select id="calc_poi_op" class="form-control">
+                <option value="eq">P(X = k)</option>
+                <option value="leq">P(X ≤ k)</option>
+                <option value="geq">P(X ≥ k)</option>
+              </select>
+            </div>
+            <div><label class="form-label">Valor k</label><input type="number" id="calc_poi_k" class="form-control" value="7"></div>
+          </div>
+          <button class="btn btn-primary mt-2" onclick="App.runCalcPoisson()">⚡ Calcular Probabilidad</button>
+          <div id="calcRes_poisson" class="result-card mt-2" style="display:none;"></div>
+        </div>
+
+        <!-- Ejemplo Mínimo del Parcial 2025 -->
+        <div class="formula-box highlight mt-2">
+          <strong style="color:var(--secondary);">📌 Ejemplo Exacto del Parcial 2025 (Temario A, Ej 4):</strong>
+          <p style="margin-top:0.3rem;"><em>"Una heladería recibe en promedio 5 clientes por minuto (λ = 5). a) ¿P(en 1 min lleguen 7 clientes)? b) ¿En 30 segundos lleguen entre 3 y 7 clientes?"</em></p>
+        </div>
+
+        <!-- Qué poner en la hoja del parcial -->
+        <div class="mt-2">
+          <h4 style="color:#34d399; margin-bottom:0.5rem;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
+          <div class="sheet-template">
+            <div class="sheet-step"><span class="step-num">1</span> <strong>Definición de la Variable:</strong><br>
+            <em>"Sea X: número de clientes que llegan a la heladería en el intervalo considerado. X es una V.A. discreta."</em></div>
+
+            <div class="sheet-step"><span class="step-num">2</span> <strong>Parámetro para 1 minuto (t = 1 min):</strong><br>
+            <code>μ = λ · t = 5 × 1 = 5</code> ⟹ <span class="badge badge-primary">X ~ Poisson(μ = 5)</span></div>
+
+            <div class="sheet-step"><span class="step-num">3</span> <strong>Función de Probabilidad:</strong><br>
+            <code class="math-expr">P(X = x) = \\frac{e^{-\\mu} \\cdot \\mu^x}{x!} \\quad \\text{para } x = 0, 1, 2, ...</code></div>
+
+            <div class="sheet-step"><span class="step-num">4</span> <strong>Sustitución para x = 7 clientes:</strong><br>
+            <code class="math-expr">P(X = 7) = \\frac{e^{-5} \\cdot 5^7}{7!} = \\frac{(0.0067379) \\cdot 78125}{5040} = 0.1044 \\quad (10.44%)</code></div>
+
+            <div class="sheet-step"><span class="step-num">5</span> <strong>Cambio de Escala para 30 segundos (t = 0.5 min):</strong><br>
+            <code>μ' = λ · t' = 5 × 0.5 = 2.5 clientes</code><br>
+            <code class="math-expr">P(3 \\le X \\le 7) = P(3) + P(4) + P(5) + P(6) + P(7) = 0.4520 \\quad (45.20%)</code></div>
+
+            <div class="sheet-step"><span class="step-num">6</span> <strong>Esperanza y Varianza:</strong><br>
+            <code>E(X) = μ = 5</code>, <code>Var(X) = μ = 5</code></div>
+          </div>
+        </div>
+      `;
+    } else if (distId === 'normal') {
+      container.innerHTML = `
+        <div class="guide-card-header">
+          <div class="guide-card-title">
+            <span>🔔</span>
+            <span>Distribución Normal (Gaussiana)</span>
+            <span class="badge badge-secondary">TP 4 - Continuas</span>
+          </div>
+          <span class="badge badge-success" style="font-size:0.95rem; font-family:monospace;">X ~ N(μ, σ²)</span>
+        </div>
+        <p class="hero-desc">Curva continua simétrica en forma de campana centrada en la media μ con dispersión σ.</p>
+
+        <!-- Calculadora -->
+        <div class="calc-mini-box">
+          <h4 style="color:var(--primary); margin-bottom:0.6rem;">🧮 Calculadora Normal (con Estandarización Z):</h4>
+          <div class="grid-4">
+            <div><label class="form-label">Media (μ)</label><input type="number" step="0.1" id="calc_norm_mu" class="form-control" value="8.2"></div>
+            <div><label class="form-label">Desvío (σ)</label><input type="number" step="0.1" id="calc_norm_sigma" class="form-control" value="1.1" min="0.001"></div>
+            <div><label class="form-label">Límite x1</label><input type="number" step="0.1" id="calc_norm_x1" class="form-control" value="7.0"></div>
+            <div><label class="form-label">Límite x2</label><input type="number" step="0.1" id="calc_norm_x2" class="form-control" value="10.0"></div>
+          </div>
+          <div class="grid-2 mt-1">
+            <div><label class="form-label">Población N (Opcional)</label><input type="number" id="calc_norm_N" class="form-control" value="20" placeholder="Ej: 20 encuentros"></div>
+          </div>
+          <button class="btn btn-primary mt-2" onclick="App.runCalcNormal()">⚡ Calcular Probabilidad & Z</button>
+          <div id="calcRes_normal" class="result-card mt-2" style="display:none;"></div>
+        </div>
+
+        <!-- Ejemplo Mínimo del Parcial 2025 -->
+        <div class="formula-box highlight mt-2">
+          <strong style="color:var(--secondary);">📌 Ejemplo Exacto del Parcial 2025 (Temario A, Ej 5):</strong>
+          <p style="margin-top:0.3rem;"><em>"Una planta industrial capacita operarios en CEP. El tiempo medio estimado del curso es μ = 8.2 hs con desvío estándar σ = 1.1 hs. a) ¿P(el curso dure entre 7 y 10 hs)? b) Si P > 75%, ¿se recomienda contratar servicio extra? c) De 20 encuentros al año, ¿cuántos durarán entre 7 y 10 hs?"</em></p>
+        </div>
+
+        <!-- Qué poner en la hoja del parcial -->
+        <div class="mt-2">
+          <h4 style="color:#34d399; margin-bottom:0.5rem;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
+          <div class="sheet-template">
+            <div class="sheet-step"><span class="step-num">1</span> <strong>Definición formal de la Variable:</strong><br>
+            <em>"Sea X: duración en horas del curso de capacitación de operarios. X es una variable aleatoria continua."</em></div>
+
+            <div class="sheet-step"><span class="step-num">2</span> <strong>Modelo y Parámetros:</strong><br>
+            <span class="badge badge-primary">X ~ N(μ = 8.2, σ = 1.1)</span> con varianza σ² = 1.21.</div>
+
+            <div class="sheet-step"><span class="step-num">3</span> <strong>Estandarización a la Normal Estándar Z ~ N(0, 1):</strong><br>
+            <code class="math-expr">Z = \\frac{X - \\mu}{\\sigma} = \\frac{X - 8.2}{1.1}</code></div>
+
+            <div class="sheet-step"><span class="step-num">4</span> <strong>Estandarizar Límites x₁ = 7 y x₂ = 10:</strong><br>
+            <code class="math-expr">z_1 = \\frac{7 - 8.2}{1.1} = \\frac{-1.2}{1.1} = -1.09 \\quad | \\quad z_2 = \\frac{10 - 8.2}{1.1} = \\frac{1.8}{1.1} = 1.64</code></div>
+
+            <div class="sheet-step"><span class="step-num">5</span> <strong>Cálculo de Probabilidad por Tabla Normal Φ(z):</strong><br>
+            <code class="math-expr">P(7 \\le X \\le 10) = P(-1.09 \\le Z \\le 1.64) = \\Phi(1.64) - \\Phi(-1.09)</code><br>
+            Por simetría: <code>Φ(-1.09) = 1 - Φ(1.09) = 1 - 0.8621 = 0.1379</code><br>
+            <code class="math-expr">P(7 \\le X \\le 10) = 0.9495 - 0.1379 = 0.8116 \\quad (81.16%)</code></div>
+
+            <div class="sheet-step"><span class="step-num">6</span> <strong>Proyección en Población N = 20 encuentros:</strong><br>
+            <code>E = N · P = 20 × 0.8116 = 16.23 ≈ 16 encuentros</code></div>
+
+            <div class="sheet-step"><span class="step-num">7</span> <strong>Conclusión redactada:</strong><br>
+            <em>"Respuesta: Como la probabilidad 81.16% > 75%, SE RECOMIENDA contratar el servicio extra. Se espera que 16 de los 20 encuentros duren entre 7 y 10 horas."</em></div>
+          </div>
+        </div>
+      `;
+    } else if (distId === 'uniformContinuous') {
+      container.innerHTML = `
+        <div class="guide-card-header">
+          <div class="guide-card-title">
+            <span>📏</span>
+            <span>Distribución Uniforme Continua (Rectangular)</span>
+            <span class="badge badge-secondary">TP 4 - Continuas</span>
+          </div>
+          <span class="badge badge-success" style="font-size:0.95rem; font-family:monospace;">X ~ U(a, b)</span>
+        </div>
+        <p class="hero-desc">Densidad de probabilidad constante en todo el intervalo cerrado [a, b].</p>
+
+        <!-- Calculadora -->
+        <div class="calc-mini-box">
+          <h4 style="color:var(--primary); margin-bottom:0.6rem;">🧮 Calculadora Uniforme Continua:</h4>
+          <div class="grid-3">
+            <div><label class="form-label">Límite Inferior (a)</label><input type="number" step="0.5" id="calc_uni_a" class="form-control" value="4"></div>
+            <div><label class="form-label">Límite Superior (b)</label><input type="number" step="0.5" id="calc_uni_b" class="form-control" value="10"></div>
+            <div><label class="form-label">Límite de Prueba x1</label><input type="number" step="0.5" id="calc_uni_x1" class="form-control" value="8"></div>
+          </div>
+          <button class="btn btn-primary mt-2" onclick="App.runCalcUniform()">⚡ Calcular P(X ≥ x1), Media y Desvío</button>
+          <div id="calcRes_uniform" class="result-card mt-2" style="display:none;"></div>
+        </div>
+
+        <!-- Ejemplo Mínimo del Parcial 2025 -->
+        <div class="formula-box highlight mt-2">
+          <strong style="color:var(--secondary);">📌 Ejemplo Exacto del Parcial 2025 (Temario A, Ej 6):</strong>
+          <p style="margin-top:0.3rem;"><em>"El tiempo de reposición (lead time) de un repuesto crítico se distribuye uniformemente entre 4 y 10 días: X ~ U(4, 10). a) Calcule media y desvío estándar. b) ¿P(X ≥ 8)? c) ¿P(X ≤ 6)? d) ¿Qué es más probable?"</em></p>
+        </div>
+
+        <!-- Qué poner en la hoja del parcial -->
+        <div class="mt-2">
+          <h4 style="color:#34d399; margin-bottom:0.5rem;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
+          <div class="sheet-template">
+            <div class="sheet-step"><span class="step-num">1</span> <strong>Definición formal de la Variable:</strong><br>
+            <em>"Sea X: tiempo de reposición (lead time) en días. X es una V.A. continua uniforme en [4, 10]."</em></div>
+
+            <div class="sheet-step"><span class="step-num">2</span> <strong>Modelo y Parámetros:</strong><br>
+            <span class="badge badge-primary">X ~ U(a = 4, b = 10)</span> con longitud de base b - a = 6 días.</div>
+
+            <div class="sheet-step"><span class="step-num">3</span> <strong>Función de Densidad y Distribución:</strong><br>
+            <code class="math-expr">f(x) = \\frac{1}{b - a} = \\frac{1}{6} \\quad (4 \\le x \\le 10)</code><br>
+            <code class="math-expr">F(x) = \\frac{x - a}{b - a} = \\frac{x - 4}{6} \\quad (4 \\le x \\le 10)</code></div>
+
+            <div class="sheet-step"><span class="step-num">4</span> <strong>Cálculo de Media y Desviación Estándar:</strong><br>
+            <code class="math-expr">\\mu = E(X) = \\frac{a + b}{2} = \\frac{4 + 10}{2} = 7 \\text{ días}</code><br>
+            <code class="math-expr">\\sigma^2 = \\frac{(b - a)^2}{12} = \\frac{36}{12} = 3 \\implies \\sigma = \\sqrt{3} \\approx 1.732 \\text{ días}</code></div>
+
+            <div class="sheet-step"><span class="step-num">5</span> <strong>Cálculo de Probabilidades:</strong><br>
+            <code class="math-expr">P(X \\ge 8) = \\frac{10 - 8}{10 - 4} = \\frac{2}{6} = 0.3333 \\quad (33.33%)</code><br>
+            <code class="math-expr">P(X \\le 6) = \\frac{6 - 4}{10 - 4} = \\frac{2}{6} = 0.3333 \\quad (33.33%)</code></div>
+
+            <div class="sheet-step"><span class="step-num">6</span> <strong>Conclusión:</strong><br>
+            <em>"Respuesta: Ambos sucesos son igualmente probables (33.33% cada uno) debido a la simetría de la distribución uniforme respecto a su media μ = 7 días."</em></div>
+          </div>
+        </div>
+      `;
+    } else if (distId === 'gamma') {
+      container.innerHTML = `
+        <div class="guide-card-header">
+          <div class="guide-card-title">
+            <span>⏳</span>
+            <span>Distribución Gamma y Erlang</span>
+            <span class="badge badge-secondary">TP 4 - Continuas</span>
+          </div>
+          <span class="badge badge-success" style="font-size:0.95rem; font-family:monospace;">Y ~ Gamma(α, β)</span>
+        </div>
+        <p class="hero-desc">Tiempo continuo hasta la ocurrencia de α eventos en un proceso de Poisson.</p>
+
+        <!-- Calculadora -->
+        <div class="calc-mini-box">
+          <h4 style="color:var(--primary); margin-bottom:0.6rem;">🧮 Calculadora Gamma (Teorema Poisson-Gamma):</h4>
+          <div class="grid-3">
+            <div><label class="form-label">Eventos (α)</label><input type="number" id="calc_gam_alpha" class="form-control" value="2"></div>
+            <div><label class="form-label">Escala β (seg)</label><input type="number" step="1" id="calc_gam_beta" class="form-control" value="12"></div>
+            <div><label class="form-label">Tiempo t1 (seg)</label><input type="number" step="1" id="calc_gam_t1" class="form-control" value="30"></div>
+          </div>
+          <button class="btn btn-primary mt-2" onclick="App.runCalcGamma()">⚡ Calcular P(Y ≤ t1)</button>
+          <div id="calcRes_gamma" class="result-card mt-2" style="display:none;"></div>
+        </div>
+
+        <!-- Ejemplo Mínimo del Parcial 2025 -->
+        <div class="formula-box highlight mt-2">
+          <strong style="color:var(--secondary);">📌 Ejemplo Exacto del Parcial 2025 (Temario A, Ej 4d-e):</strong>
+          <p style="margin-top:0.3rem;"><em>"Una heladería recibe 5 clientes/min (1 cliente cada 12 segundos). Se define Y como el tiempo en segundos hasta que lleguen 2 clientes (α = 2, β = 12 seg). Calcule P(Y ≤ 30 seg) y P(30 ≤ Y ≤ 48 seg)."</em></p>
+        </div>
+
+        <!-- Qué poner en la hoja del parcial -->
+        <div class="mt-2">
+          <h4 style="color:#34d399; margin-bottom:0.5rem;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
+          <div class="sheet-template">
+            <div class="sheet-step"><span class="step-num">1</span> <strong>Definición formal de la Variable:</strong><br>
+            <em>"Sea Y: tiempo en segundos hasta la llegada de α = 2 clientes. Y es una V.A. continua."</em></div>
+
+            <div class="sheet-step"><span class="step-num">2</span> <strong>Parámetros en Segundos:</strong><br>
+            Tasa por segundo: <code>λ = 5/60 = 1/12 clientes/seg</code><br>
+            Parámetro de escala: <code>β = 1/λ = 12 segundos</code> ⟹ <span class="badge badge-primary">Y ~ Gamma(α = 2, β = 12 seg)</span></div>
+
+            <div class="sheet-step"><span class="step-num">3</span> <strong>Teorema Fundamental Poisson-Gamma (Cátedra UNJu):</strong><br>
+            <code class="math-expr">P(Y \\le t) = P(N_t \\ge \\alpha) = 1 - \\sum_{k=0}^{\\alpha - 1} \\frac{e^{-\\mu} \\mu^k}{k!} \\quad \\text{con } \\mu = \\frac{t}{\\beta}</code></div>
+
+            <div class="sheet-step"><span class="step-num">4</span> <strong>Sustitución para t = 30 seg (μ = 30 / 12 = 2.5):</strong><br>
+            <code class="math-expr">P(Y \\le 30) = 1 - e^{-2.5}(1 + 2.5) = 1 - 3.5(0.082085) = 0.7127 \\quad (71.27%)</code></div>
+
+            <div class="sheet-step"><span class="step-num">5</span> <strong>Para t = 48 seg (μ = 48 / 12 = 4):</strong><br>
+            <code>P(Y ≤ 48) = 1 - e⁻⁴(1 + 4) = 0.9084</code><br>
+            <code class="math-expr">P(30 \\le Y \\le 48) = P(Y \\le 48) - P(Y \\le 30) = 0.9084 - 0.7127 = 0.1957 \\quad (19.57%)</code></div>
+          </div>
+        </div>
+      `;
+    } else if (distId === 'contingency') {
+      container.innerHTML = `
+        <div class="guide-card-header">
+          <div class="guide-card-title">
+            <span>📊</span>
+            <span>Tablas de Contingencia e Independencia</span>
+            <span class="badge badge-primary">TP 3 - Bivariadas</span>
+          </div>
+        </div>
+        <p class="hero-desc">Resolución algebraica de incógnitas (A, B, C, D) y cálculo de probabilidades marginales, uniones, condicionales y prueba formal de independencia estocástica.</p>
+
+        <!-- Calculadora de Tabla -->
+        <div class="calc-mini-box">
+          <h4 style="color:var(--primary); margin-bottom:0.6rem;">🧮 Solucionador de Tablas (Carga los datos del parcial):</h4>
+          <button class="btn btn-primary btn-sm" onclick="App.loadContingencyDemo()">⚡ Resolver Tabla Parcial 2025 (Ciberseguridad)</button>
+          <div id="contingencySolvedBox" class="result-card mt-2" style="display:none;"></div>
+        </div>
+
+        <!-- Qué poner en la hoja del parcial -->
+        <div class="mt-2">
+          <h4 style="color:#34d399; margin-bottom:0.5rem;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
+          <div class="sheet-template">
+            <div class="sheet-step"><span class="step-num">1</span> <strong>Cálculo de Incógnitas por Balance de Filas/Columnas:</strong><br>
+            • C = Total A - (18 + 12 + 5) = 37 - 35 = <strong>2</strong><br>
+            • A = Total C - (8 + 4 + 1) = 27 - 13 = <strong>14</strong><br>
+            • B = Total D - (22 + 5 + 3) = 40 - 30 = <strong>10</strong><br>
+            • D = 5 + 3 + 4 + 5 + 7 = <strong>24</strong> (Total Deserción)</div>
+
+            <div class="sheet-step"><span class="step-num">2</span> <strong>Probabilidad Marginal:</strong> <code>P(Sin Internet) = 13 / 180 = 0.0722 (7.22%)</code></div>
+            <div class="sheet-step"><span class="step-num">3</span> <strong>Probabilidad de Unión Mutuamente Excluyente:</strong> <code>P(D ∪ E) = (40 + 56)/180 = 96/180 = 0.5333</code></div>
+            <div class="sheet-step"><span class="step-num">4</span> <strong>Regla General de la Adición:</strong> <code>P(Ap ∪ C) = P(Ap) + P(C) - P(Ap ∩ C) = (89 + 27 - 14)/180 = 102/180 = 0.5667</code></div>
+            <div class="sheet-step"><span class="step-num">5</span> <strong>Probabilidad Condicional:</strong> <code>P(C | Deserción) = P(C ∩ Des) / P(Des) = 4 / 24 = 1/6 = 0.1667</code></div>
+            <div class="sheet-step"><span class="step-num">6</span> <strong>Demostración de Independencia (Comisión D y Aprobado):</strong><br>
+            <code>P(D ∩ Ap) = 22 / 180 = 0.1222</code><br>
+            <code>P(D) × P(Ap) = (40/180) × (89/180) = 0.1099</code><br>
+            Como <strong>0.1222 ≠ 0.1099</strong>, los sucesos <strong>NO SON INDEPENDIENTES</strong>.</div>
+          </div>
+        </div>
+      `;
+    } else if (distId === 'bayes') {
+      container.innerHTML = `
+        <div class="guide-card-header">
+          <div class="guide-card-title">
+            <span>🌳</span>
+            <span>Teorema de la Probabilidad Total y Bayes</span>
+            <span class="badge badge-primary">TP 2 y TP 3</span>
+          </div>
+        </div>
+        <p class="hero-desc">Cálculo de la probabilidad total del efecto y de las probabilidades a posteriori de las causas (Teorema de Bayes).</p>
+
+        <!-- Qué poner en la hoja del parcial -->
+        <div class="mt-2">
+          <h4 style="color:#34d399; margin-bottom:0.5rem;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
+          <div class="sheet-template">
+            <div class="sheet-step"><span class="step-num">1</span> <strong>Partición del Espacio Muestral (Causas Aᵢ):</strong><br>
+            P(Ambulatorio A₁) = 0.40 | P(Magistrales A₂) = 0.35 | P(Alto Costo A₃) = 0.25 (Σ = 1.00)</div>
+
+            <div class="sheet-step"><span class="step-num">2</span> <strong>Probabilidades Condicionales (Verosimilitud):</strong><br>
+            Sin inconvenientes (S): P(S|A₁) = 0.98, P(S|A₂) = 0.99, P(S|A₃) = 0.95<br>
+            Con inconvenientes (Sᶜ): P(Sᶜ|A₁) = 0.02, P(Sᶜ|A₂) = 0.01, P(Sᶜ|A₃) = 0.05</div>
+
+            <div class="sheet-step"><span class="step-num">3</span> <strong>Teorema de la Probabilidad Total: P(S)</strong><br>
+            <code class="math-expr">P(S) = \\sum_{i=1}^3 P(A_i) \\cdot P(S | A_i) = (0.40)(0.98) + (0.35)(0.99) + (0.25)(0.95) = 0.9760 \\quad (97.60%)</code></div>
+
+            <div class="sheet-step"><span class="step-num">4</span> <strong>Teorema de Bayes: P(Alto Costo A₃ | Sin Inconveniente S)</strong><br>
+            <code class="math-expr">P(A_3 | S) = \\frac{P(A_3) \\cdot P(S | A_3)}{P(S)} = \\frac{0.25 \\cdot 0.95}{0.9760} = \\frac{0.2375}{0.9760} = 0.2433 \\quad (24.33%)</code></div>
+
+            <div class="sheet-step"><span class="step-num">5</span> <strong>Teorema de Bayes: P(Ambulatorio A₁ | Con Inconveniente Sᶜ)</strong><br>
+            P(Sᶜ) = 1 - 0.9760 = 0.0240<br>
+            <code class="math-expr">P(A_1 | S^c) = \\frac{P(A_1) \\cdot P(S^c | A_1)}{P(S^c)} = \\frac{0.40 \\cdot 0.02}{0.0240} = \\frac{0.0080}{0.0240} = 0.3333 \\quad (33.33%)</code></div>
+          </div>
+        </div>
+      `;
     } else {
-      preset = {
-        rows: ["Fila 1", "Fila 2", "Fila 3"],
-        cols: ["Col 1", "Col 2", "Col 3"],
-        rowTotals: [100, 70, 30],
-        colTotals: [116, null, 28],
-        grandTotal: 200,
-        matrix: [
-          [55, "A", 12],
-          ["B", 14, "C"],
-          [15, 9, "D"]
-        ]
-      };
-    }
-
-    this.contingencyData = JSON.parse(JSON.stringify(preset));
-    this.renderContingencyTableInput();
-    const resBox = document.getElementById('contingencyResults');
-    if (resBox) resBox.style.display = 'none';
-    const chartBox = document.getElementById('contingencyChartBox');
-    if (chartBox) chartBox.style.display = 'none';
-  },
-
-  renderContingencyTableInput() {
-    const container = document.getElementById('contingencyTableWrapper');
-    if (!container || !this.contingencyData) return;
-
-    const data = this.contingencyData;
-    let html = `
-      <table class="exam-table">
-        <thead>
-          <tr>
-            <th>CATEGORÍA</th>
-            ${data.cols.map(c => `<th>${c}</th>`).join('')}
-            <th>TOTAL FILA</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
-
-    for (let i = 0; i < data.rows.length; i++) {
-      html += `<tr><td><strong>${data.rows[i]}</strong></td>`;
-      for (let j = 0; j < data.cols.length; j++) {
-        const val = data.matrix[i][j];
-        const displayVal = val !== null && val !== undefined ? val : '';
-        html += `<td><input type="text" class="table-input" id="cell_${i}_${j}" value="${displayVal}"></td>`;
-      }
-      const rTot = data.rowTotals[i] !== null && data.rowTotals[i] !== undefined ? data.rowTotals[i] : '';
-      html += `<td><input type="text" class="table-input font-bold" id="row_tot_${i}" value="${rTot}"></td></tr>`;
-    }
-
-    // Column totals row
-    html += `<tr class="table-total"><td>TOTAL COLUMNA</td>`;
-    for (let j = 0; j < data.cols.length; j++) {
-      const cTot = data.colTotals[j] !== null && data.colTotals[j] !== undefined ? data.colTotals[j] : '';
-      html += `<td><input type="text" class="table-input font-bold" id="col_tot_${j}" value="${cTot}"></td>`;
-    }
-    const gTot = data.grandTotal !== null && data.grandTotal !== undefined ? data.grandTotal : '';
-    html += `<td><input type="text" class="table-input font-bold text-primary" id="grand_total_input" value="${gTot}"></td></tr>`;
-
-    html += `</tbody></table>`;
-    container.innerHTML = html;
-  },
-
-  calculateContingency() {
-    const data = this.contingencyData;
-    const numRows = data.rows.length;
-    const numCols = data.cols.length;
-
-    // Read values from inputs
-    const matrix = [];
-    for (let i = 0; i < numRows; i++) {
-      const row = [];
-      for (let j = 0; j < numCols; j++) {
-        const raw = (document.getElementById(`cell_${i}_${j}`).value || '').trim();
-        const num = Number(raw);
-        row.push(!isNaN(num) && raw !== '' ? num : (raw || `V_${i}_${j}`));
-      }
-      matrix.push(row);
-    }
-
-    const rowTotals = [];
-    for (let i = 0; i < numRows; i++) {
-      const raw = (document.getElementById(`row_tot_${i}`).value || '').trim();
-      const num = Number(raw);
-      rowTotals.push(!isNaN(num) && raw !== '' ? num : null);
-    }
-
-    const colTotals = [];
-    for (let j = 0; j < numCols; j++) {
-      const raw = (document.getElementById(`col_tot_${j}`).value || '').trim();
-      const num = Number(raw);
-      colTotals.push(!isNaN(num) && raw !== '' ? num : null);
-    }
-
-    const rawG = (document.getElementById('grand_total_input').value || '').trim();
-    const grandTotal = (!isNaN(Number(rawG)) && rawG !== '') ? Number(rawG) : null;
-
-    const result = Solvers.solveContingency(matrix, data.rows, data.cols, rowTotals, colTotals, grandTotal);
-
-    // Update inputs with solved numbers
-    for (let i = 0; i < numRows; i++) {
-      for (let j = 0; j < numCols; j++) {
-        const inp = document.getElementById(`cell_${i}_${j}`);
-        if (inp) inp.value = result.solvedGrid[i][j];
-      }
-      const rInp = document.getElementById(`row_tot_${i}`);
-      if (rInp) rInp.value = result.rowTotals[i];
-    }
-    for (let j = 0; j < numCols; j++) {
-      const cInp = document.getElementById(`col_tot_${j}`);
-      if (cInp) cInp.value = result.colTotals[j];
-    }
-    document.getElementById('grand_total_input').value = result.grandTotal;
-
-    // Display formatted results
-    const N = result.grandTotal;
-    let solvedVarsText = Object.keys(result.solvedVars).length > 0 ?
-      `<p><strong>Incógnitas resueltas:</strong> ` + Object.entries(result.solvedVars).map(([k, v]) => `<code>${k} = ${v}</code>`).join(', ') + `</p>` : '';
-
-    // Calculate Modal state for row 0
-    let maxVal = -1;
-    let maxColIdx = 0;
-    for (let j = 0; j < numCols; j++) {
-      if (result.solvedGrid[0][j] > maxVal) {
-        maxVal = result.solvedGrid[0][j];
-        maxColIdx = j;
-      }
-    }
-    const modalRow0 = data.cols[maxColIdx];
-
-    // Independence demo (e.g., Row 3 vs Col 0 or Row 0 vs Col 0)
-    const testR = Math.min(3, numRows - 1);
-    const testC = 0;
-    const pJoint = result.solvedGrid[testR][testC] / N;
-    const pR = result.rowTotals[testR] / N;
-    const pC = result.colTotals[testC] / N;
-    const pProd = pR * pC;
-    const isIndep = Math.abs(pJoint - pProd) < 1e-6;
-
-    const resBox = document.getElementById('contingencyResults');
-    resBox.style.display = 'block';
-    resBox.innerHTML = `
-      <h4>✅ Análisis Completo de la Tabla</h4>
-      ${solvedVarsText}
-      <div class="grid-2 mt-2">
-        <div class="formula-box">
-          <p><strong>Total de observaciones (N):</strong> ${N}</p>
-          <p><strong>Promedio por fila:</strong> ${(N / numRows).toFixed(2)}</p>
-          <p><strong>Categoría Modal en ${data.rows[0]}:</strong> <span class="badge badge-success">${modalRow0} (${maxVal})</span></p>
+      container.innerHTML = `
+        <div class="guide-card-header">
+          <div class="guide-card-title"><span>⚡</span><span>Distribución Exponencial</span></div>
+          <span class="badge badge-success">X ~ Exp(β)</span>
         </div>
         <div class="formula-box">
-          <p><strong>Prueba de Independencia Estocástica:</strong></p>
-          <p><small>${data.rows[testR]} y ${data.cols[testC]}:</small></p>
-          <p class="math-expr">P(A ∩ B) = ${pJoint.toFixed(4)}</p>
-          <p class="math-expr">P(A) × P(B) = ${pProd.toFixed(4)}</p>
-          <p><strong>Conclusión:</strong> <span class="badge ${isIndep ? 'badge-success' : 'badge-warning'}">${isIndep ? 'Son INDEPENDIENTES' : 'Son DEPENDIENTES (No independientes)'}</span></p>
+          <p>Tiempo hasta el primer evento. Media β = 1/λ. Función Acumulada: <code>F(x) = 1 - e^(-x/β)</code>.</p>
         </div>
-      </div>
-    `;
-
-    // Render Bar Chart
-    this.drawContingencyChart(result, data);
+      `;
+    }
   },
 
-  drawContingencyChart(result, data) {
-    if (!result || !data) return;
-    const chartBox = document.getElementById('contingencyChartBox');
-    chartBox.style.display = 'flex';
-    const canvas = document.getElementById('contingencyCanvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const width = canvas.parentElement.clientWidth || 500;
-    const height = 240;
-    canvas.width = width;
-    canvas.height = height;
+  // Toggle k2 for binomial interval
+  toggleBinomialK2() {
+    const op = document.getElementById('calc_bin_op').value;
+    const row = document.getElementById('calc_bin_k2_row');
+    if (row) row.style.display = op === 'between' ? 'block' : 'none';
+  },
 
-    ctx.clearRect(0, 0, width, height);
+  // Calculators execution
+  runCalcBinomial() {
+    const n = parseInt(document.getElementById('calc_bin_n').value);
+    const p = parseFloat(document.getElementById('calc_bin_p').value);
+    const op = document.getElementById('calc_bin_op').value;
+    const k = parseInt(document.getElementById('calc_bin_k').value);
+    const k2 = op === 'between' ? parseInt(document.getElementById('calc_bin_k2').value) : null;
+    const res = Solvers.solveBinomial(n, p, k, op, k2);
 
-    // Draw Column Totals Bar Chart
-    const cols = data.cols;
-    const totals = result.colTotals;
-    const maxVal = Math.max(...totals, 1);
-    const padX = 40;
-    const padY = 30;
-    const chartW = width - padX * 2;
-    const chartH = height - padY * 2;
+    const out = document.getElementById('calcRes_binomial');
+    out.style.display = 'block';
+    out.innerHTML = `
+      <h4>✅ Resultado: ${res.description}</h4>
+      <div class="result-number">${(res.prob * 100).toFixed(2)}% <small style="font-size:1rem; color:var(--text-secondary);">(P = ${res.prob.toFixed(5)})</small></div>
+      <p>Esperanza E(X) = n · p = <strong>${res.mu.toFixed(2)}</strong> | Varianza Var(X) = <strong>${res.variance.toFixed(4)}</strong> (σ = ${res.sigma.toFixed(3)})</p>
+    `;
+  },
 
-    const barW = chartW / cols.length * 0.6;
-    const gap = chartW / cols.length;
+  runCalcNegativeBinomial() {
+    const r = parseInt(document.getElementById('calc_nb_r').value);
+    const x = parseInt(document.getElementById('calc_nb_x').value);
+    const p = parseFloat(document.getElementById('calc_nb_p').value);
+    const res = Solvers.solveNegativeBinomial(r, p, x);
 
-    // Draw Axis
-    ctx.strokeStyle = '#4b5563';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(padX, height - padY);
-    ctx.lineTo(width - padX, height - padY);
-    ctx.stroke();
+    const out = document.getElementById('calcRes_negativeBinomial');
+    out.style.display = 'block';
+    out.innerHTML = `
+      <h4>✅ Resultado: P(X = ${x} ensayos para ${r} éxitos)</h4>
+      <div class="result-number">${(res.prob * 100).toFixed(2)}% <small style="font-size:1rem; color:var(--text-secondary);">(P = ${res.prob.toFixed(5)})</small></div>
+      <p>C(${x}-1, ${r}-1) = ${res.comb} | Esperanza E(X) = r/p = <strong>${res.mu.toFixed(2)} ensayos</strong></p>
+    `;
+  },
 
-    const colors = ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#ec4899'];
+  runCalcHypergeometric() {
+    const N = parseInt(document.getElementById('calc_hyp_N').value);
+    const A = parseInt(document.getElementById('calc_hyp_A').value);
+    const n = parseInt(document.getElementById('calc_hyp_n').value);
+    const k = parseInt(document.getElementById('calc_hyp_k').value);
+    const res = Solvers.solveHypergeometric(N, A, n, k, 'eq');
 
-    cols.forEach((colName, idx) => {
-      const val = totals[idx];
-      const h = (val / maxVal) * (chartH - 20);
-      const x = padX + idx * gap + (gap - barW) / 2;
-      const y = height - padY - h;
+    const out = document.getElementById('calcRes_hypergeometric');
+    out.style.display = 'block';
+    out.innerHTML = `
+      <h4>✅ Resultado: P(X = ${k})</h4>
+      <div class="result-number">${(res.prob * 100).toFixed(2)}% <small style="font-size:1rem; color:var(--text-secondary);">(P = ${res.prob.toFixed(5)})</small></div>
+      <p>Esperanza E(X) = n · (A/N) = <strong>${res.mu.toFixed(4)}</strong> | Varianza = <strong>${res.variance.toFixed(4)}</strong></p>
+    `;
+  },
 
-      // Bar gradient
-      const grad = ctx.createLinearGradient(x, y, x, y + h);
-      grad.addColorStop(0, colors[idx % colors.length]);
-      grad.addColorStop(1, 'rgba(31, 41, 55, 0.8)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(x, y, barW, h);
+  runCalcPoisson() {
+    const lambda = parseFloat(document.getElementById('calc_poi_lambda').value);
+    const t = parseFloat(document.getElementById('calc_poi_t').value);
+    const op = document.getElementById('calc_poi_op').value;
+    const k = parseInt(document.getElementById('calc_poi_k').value);
+    const res = Solvers.solvePoisson(lambda, t, k, op);
 
-      // Value label
-      ctx.fillStyle = '#f3f4f6';
-      ctx.font = '11px sans-serif';
-      ctx.textAlign = 'center';
-      const pct = ((val / result.grandTotal) * 100).toFixed(1) + '%';
-      ctx.fillText(`${val} (${pct})`, x + barW / 2, y - 6);
+    const out = document.getElementById('calcRes_poisson');
+    out.style.display = 'block';
+    out.innerHTML = `
+      <h4>✅ Resultado: ${res.description} (μ = ${res.mu})</h4>
+      <div class="result-number">${(res.prob * 100).toFixed(2)}% <small style="font-size:1rem; color:var(--text-secondary);">(P = ${res.prob.toFixed(5)})</small></div>
+      <p>Media μ = ${res.mu} | Desvío σ = <strong>${res.sigma.toFixed(3)}</strong></p>
+    `;
+  },
 
-      // Col name
-      ctx.fillStyle = '#9ca3af';
-      ctx.fillText(colName.substring(0, 10), x + barW / 2, height - padY + 16);
+  runCalcNormal() {
+    const mu = parseFloat(document.getElementById('calc_norm_mu').value);
+    const sigma = parseFloat(document.getElementById('calc_norm_sigma').value);
+    const x1 = parseFloat(document.getElementById('calc_norm_x1').value);
+    const x2 = parseFloat(document.getElementById('calc_norm_x2').value);
+    const N = parseFloat(document.getElementById('calc_norm_N').value) || null;
+    const res = Solvers.solveNormal(mu, sigma, x1, x2, 'between', N);
+
+    const out = document.getElementById('calcRes_normal');
+    out.style.display = 'block';
+    let popText = res.expectedCount !== null ? `<p>Esperado en población N = ${N}: <strong>${res.expectedCount.toFixed(2)}</strong> individuos</p>` : '';
+    out.innerHTML = `
+      <h4>✅ Resultado: P(${Math.min(x1, x2)} ≤ X ≤ ${Math.max(x1, x2)})</h4>
+      <div class="result-number">${(res.prob * 100).toFixed(2)}% <small style="font-size:1rem; color:var(--text-secondary);">(P = ${res.prob.toFixed(4)})</small></div>
+      <p>Estandarización: z₁ = <strong>${res.z1.toFixed(2)}</strong>, z₂ = <strong>${res.z2.toFixed(2)}</strong></p>
+      ${popText}
+    `;
+  },
+
+  runCalcUniform() {
+    const a = parseFloat(document.getElementById('calc_uni_a').value);
+    const b = parseFloat(document.getElementById('calc_uni_b').value);
+    const x1 = parseFloat(document.getElementById('calc_uni_x1').value);
+    const res = Solvers.solveUniformContinuous(a, b, x1, null, 'geq');
+
+    const out = document.getElementById('calcRes_uniform');
+    out.style.display = 'block';
+    out.innerHTML = `
+      <h4>✅ Resultado: P(X ≥ ${x1})</h4>
+      <div class="result-number">${(res.prob * 100).toFixed(2)}% <small style="font-size:1rem; color:var(--text-secondary);">(P = ${res.prob.toFixed(4)})</small></div>
+      <p>Media E(X) = <strong>${res.mu.toFixed(2)}</strong> | Desvío σ = <strong>${res.sigma.toFixed(3)}</strong> (Var = ${res.variance.toFixed(2)})</p>
+    `;
+  },
+
+  runCalcGamma() {
+    const alpha = parseFloat(document.getElementById('calc_gam_alpha').value);
+    const beta = parseFloat(document.getElementById('calc_gam_beta').value);
+    const t1 = parseFloat(document.getElementById('calc_gam_t1').value);
+    const res = Solvers.solveGamma(alpha, beta, t1, null, 'leq');
+
+    const out = document.getElementById('calcRes_gamma');
+    out.style.display = 'block';
+    out.innerHTML = `
+      <h4>✅ Resultado: P(Y ≤ ${t1} seg)</h4>
+      <div class="result-number">${(res.prob * 100).toFixed(2)}% <small style="font-size:1rem; color:var(--text-secondary);">(P = ${res.prob.toFixed(4)})</small></div>
+      <p>Esperanza E(Y) = α · β = <strong>${res.mu.toFixed(2)} seg</strong> | Varianza = ${res.variance.toFixed(2)}</p>
+    `;
+  },
+
+  loadContingencyDemo() {
+    const out = document.getElementById('contingencySolvedBox');
+    out.style.display = 'block';
+    out.innerHTML = `
+      <h4>✅ Incógnitas Resueltas del Parcial 2025:</h4>
+      <p>• <strong>C</strong> = 37 - 35 = <strong>2</strong> (Sin Internet Comisión A)</p>
+      <p>• <strong>A</strong> = 27 - 13 = <strong>14</strong> (Aprobados Comisión C)</p>
+      <p>• <strong>B</strong> = 40 - 30 = <strong>10</strong> (Reprobados Comisión D)</p>
+      <p>• <strong>D</strong> = 5 + 3 + 4 + 5 + 7 = <strong>24</strong> (Total Deserción)</p>
+      <p>Total General = <strong>180 estudiantes</strong>.</p>
+    `;
+  },
+
+  // -------------------------------------------------------------
+  // TAB 2: PARCIALES 2025 RESUELTOS
+  // -------------------------------------------------------------
+  switchExamView(examId) {
+    this.currentExam = examId;
+    document.querySelectorAll('#tab-exams .pills-nav .pill-item').forEach(b => {
+      b.classList.toggle('active', b.dataset.exam === examId);
     });
+    this.renderExams();
   },
 
-  resetContingencyTable() {
-    const select = document.getElementById('contingencyPresetSelect');
-    this.loadContingencyPreset(select ? select.value : 'parcial1');
-  },
-
-  // -------------------------------------------------------------
-  // Bayes & Total Probability Solver
-  // -------------------------------------------------------------
-  loadBayesPreset(key) {
-    let preset;
-    if (key === 'farmacias') {
-      preset = ExamData[0].exercises[1].preset;
-    } else if (key === 'circo') {
-      preset = {
-        causes: [
-          { name: "Elefantes (A1)", prior: 0.40, likelihood: 0.98 },
-          { name: "Leones (A2)", prior: 0.35, likelihood: 0.99 },
-          { name: "Monos (A3)", prior: 0.25, likelihood: 0.95 }
-        ],
-        eventSuccessName: "Sin Inconvenientes (S)",
-        eventFailureName: "Con Inconvenientes (I)"
-      };
-    } else if (key === 'accidentes') {
-      preset = ExamData[3].exercises[1].preset;
-    } else {
-      preset = {
-        causes: [
-          { name: "Causa 1 (A1)", prior: 0.50, likelihood: 0.90 },
-          { name: "Causa 2 (A2)", prior: 0.50, likelihood: 0.80 }
-        ],
-        eventSuccessName: "Éxito (B)",
-        eventFailureName: "Fallo (Bᶜ)"
-      };
-    }
-
-    this.renderBayesCauses(preset.causes, preset.eventSuccessName, preset.eventFailureName);
-    this.calculateBayes();
-  },
-
-  renderBayesCauses(causes, succName = "Éxito (B)", failName = "Fallo (Bᶜ)") {
-    const container = document.getElementById('bayesCausesContainer');
-    if (!container) return;
-
-    let html = `
-      <div class="grid-2 mb-2">
-        <div class="form-group">
-          <label class="form-label">Nombre Suceso Principal (B)</label>
-          <input type="text" class="form-control" id="bayesSuccessName" value="${succName}">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Nombre Suceso Complementario (Bᶜ)</label>
-          <input type="text" class="form-control" id="bayesFailureName" value="${failName}">
-        </div>
-      </div>
-      <div class="table-responsive">
-        <table class="exam-table">
-          <thead>
-            <tr>
-              <th>CAUSA / RAMA (Aᵢ)</th>
-              <th>PROBABILIDAD A PRIORI P(Aᵢ)</th>
-              <th>VEROSIMILITUD CONDICIONAL P(B | Aᵢ)</th>
-              <th>ACCIÓN</th>
-            </tr>
-          </thead>
-          <tbody id="bayesTbody">
-    `;
-
-    causes.forEach((c, idx) => {
-      html += `
-        <tr id="bayesRow_${idx}">
-          <td><input type="text" class="table-input" value="${c.name}"></td>
-          <td><input type="number" step="0.01" class="table-input" value="${c.prior}" min="0" max="1"></td>
-          <td><input type="number" step="0.01" class="table-input" value="${c.likelihood}" min="0" max="1"></td>
-          <td><button class="btn btn-secondary btn-sm" onclick="App.removeBayesCause(${idx})">🗑️</button></td>
-        </tr>
-      `;
-    });
-
-    html += `</tbody></table></div>`;
-    container.innerHTML = html;
-  },
-
-  addBayesCause() {
-    const tbody = document.getElementById('bayesTbody');
-    if (!tbody) return;
-    const idx = tbody.children.length;
-    const tr = document.createElement('tr');
-    tr.id = `bayesRow_${idx}`;
-    tr.innerHTML = `
-      <td><input type="text" class="table-input" value="Causa ${idx + 1} (A${idx + 1})"></td>
-      <td><input type="number" step="0.01" class="table-input" value="0.20" min="0" max="1"></td>
-      <td><input type="number" step="0.01" class="table-input" value="0.90" min="0" max="1"></td>
-      <td><button class="btn btn-secondary btn-sm" onclick="App.removeBayesCause(${idx})">🗑️</button></td>
-    `;
-    tbody.appendChild(tr);
-  },
-
-  removeBayesCause(idx) {
-    const row = document.getElementById(`bayesRow_${idx}`);
-    if (row) row.remove();
-  },
-
-  calculateBayes() {
-    const tbody = document.getElementById('bayesTbody');
-    if (!tbody) return;
-    const causes = [];
-    for (let tr of tbody.children) {
-      const inputs = tr.querySelectorAll('input');
-      if (inputs.length >= 3) {
-        causes.push({
-          name: inputs[0].value.trim(),
-          prior: parseFloat(inputs[1].value) || 0,
-          likelihood: parseFloat(inputs[2].value) || 0
-        });
-      }
-    }
-
-    if (causes.length === 0) return;
-
-    const res = Solvers.solveBayes(causes);
-    const succName = document.getElementById('bayesSuccessName').value || 'B';
-    const failName = document.getElementById('bayesFailureName').value || 'Bᶜ';
-
-    const resBox = document.getElementById('bayesResults');
-    resBox.style.display = 'block';
-
-    let stepsFormula = causes.map(c => `(${c.prior} × ${c.likelihood})`).join(' + ');
-    let stepsVal = res.termsSuccess.map(t => t.joint.toFixed(4)).join(' + ');
-
-    resBox.innerHTML = `
-      <h4>🌳 Resultados: Teorema de la Probabilidad Total</h4>
-      <div class="formula-box highlight">
-        <p><strong>P(${succName}):</strong></p>
-        <p class="math-expr">P(${succName}) = Σ P(Aᵢ) · P(${succName} | Aᵢ)</p>
-        <p class="math-expr">P(${succName}) = ${stepsFormula}</p>
-        <p class="math-expr">P(${succName}) = ${stepsVal} = <strong class="text-success">${res.totalProbSuccess.toFixed(4)} (${(res.totalProbSuccess * 100).toFixed(2)}%)</strong></p>
-      </div>
-
-      <h4 class="mt-2">🎯 Probabilidades a Posteriori (Teorema de Bayes):</h4>
-      <div class="grid-2">
-        <div class="formula-box">
-          <p><strong>Dado ${succName}:</strong></p>
-          ${res.posteriorSuccess.map(p => `
-            <p>P(${p.name} | ${succName}) = <code>${p.posterior.toFixed(4)} (${(p.posterior * 100).toFixed(2)}%)</code></p>
-          `).join('')}
-        </div>
-        <div class="formula-box">
-          <p><strong>Dado ${failName}:</strong></p>
-          ${res.posteriorFailure.map(p => `
-            <p>P(${p.name} | ${failName}) = <code>${p.posterior.toFixed(4)} (${(p.posterior * 100).toFixed(2)}%)</code></p>
-          `).join('')}
-        </div>
-      </div>
-    `;
-
-    this.drawBayesTree(causes, res, succName, failName);
-  },
-
-  drawBayesTree(causes, res, succName = 'B', failName = 'Bᶜ') {
-    const canvas = document.getElementById('bayesCanvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const width = canvas.parentElement.clientWidth || 500;
-    const height = 300;
-    canvas.width = width;
-    canvas.height = height;
-    ctx.clearRect(0, 0, width, height);
-
-    if (!causes || causes.length === 0) return;
-
-    const startX = 30;
-    const midX = width * 0.42;
-    const endX = width * 0.88;
-    const cy = height / 2;
-
-    // Draw Root
-    ctx.fillStyle = '#6366f1';
-    ctx.beginPath();
-    ctx.arc(startX, cy, 6, 0, Math.PI * 2);
-    ctx.fill();
-
-    const n = causes.length;
-    const stepY = (height - 40) / n;
-
-    causes.forEach((c, idx) => {
-      const my = 20 + idx * stepY + stepY / 2;
-
-      // Line from root to cause
-      ctx.strokeStyle = '#818cf8';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(startX, cy);
-      ctx.lineTo(midX, my);
-      ctx.stroke();
-
-      // Prior label
-      ctx.fillStyle = '#a5b4fc';
-      ctx.font = '10px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(`P=${c.prior}`, (startX + midX) / 2, (cy + my) / 2 - 5);
-
-      // Cause Node
-      ctx.fillStyle = '#10b981';
-      ctx.beginPath();
-      ctx.arc(midX, my, 5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#f3f4f6';
-      ctx.fillText(c.name.substring(0, 10), midX, my - 8);
-
-      // Branch to Success
-      const ySucc = my - stepY * 0.22;
-      ctx.strokeStyle = '#34d399';
-      ctx.beginPath();
-      ctx.moveTo(midX, my);
-      ctx.lineTo(endX, ySucc);
-      ctx.stroke();
-
-      ctx.fillStyle = '#34d399';
-      ctx.fillText(`${succName}: ${c.likelihood}`, (midX + endX) / 2, ySucc - 3);
-
-      // Branch to Failure
-      const yFail = my + stepY * 0.22;
-      ctx.strokeStyle = '#f87171';
-      ctx.beginPath();
-      ctx.moveTo(midX, my);
-      ctx.lineTo(endX, yFail);
-      ctx.stroke();
-
-      ctx.fillStyle = '#f87171';
-      ctx.fillText(`${failName}: ${(1 - c.likelihood).toFixed(2)}`, (midX + endX) / 2, yFail + 11);
-    });
-  },
-
-  // -------------------------------------------------------------
-  // Discrete Distributions Solver
-  // -------------------------------------------------------------
-  switchDiscreteModel(model) {
-    this.activeDiscreteModel = model;
-    const container = document.getElementById('discreteInputsContainer');
-    if (!container) return;
-
-    if (model === 'binomial') {
-      container.innerHTML = `
-        <div class="grid-3">
-          <div class="form-group">
-            <label class="form-label">Ensayos (n)</label>
-            <input type="number" id="discN" class="form-control" value="10" min="1">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Prob. Éxito (p)</label>
-            <input type="number" step="0.01" id="discP" class="form-control" value="0.80" min="0" max="1">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Operación</label>
-            <select id="discOp" class="form-control" onchange="App.toggleDiscreteSecondK()">
-              <option value="eq">P(X = k) Exacto</option>
-              <option value="leq">P(X ≤ k) Acumulada Menor</option>
-              <option value="geq">P(X ≥ k) Acumulada Mayor</option>
-              <option value="between">P(k1 ≤ X ≤ k2) Intervalo</option>
-            </select>
-          </div>
-        </div>
-        <div class="grid-2">
-          <div class="form-group">
-            <label class="form-label">Valor k (o k1)</label>
-            <input type="number" id="discK" class="form-control" value="8" min="0">
-          </div>
-          <div class="form-group" id="discK2Group" style="display:none;">
-            <label class="form-label">Valor k2</label>
-            <input type="number" id="discK2" class="form-control" value="10" min="0">
-          </div>
-        </div>
-      `;
-    } else if (model === 'negativeBinomial') {
-      container.innerHTML = `
-        <div class="grid-3">
-          <div class="form-group">
-            <label class="form-label">Éxitos Requeridos (r)</label>
-            <input type="number" id="discR" class="form-control" value="4" min="1">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Total Ensayos (x)</label>
-            <input type="number" id="discX" class="form-control" value="6" min="1">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Prob. Éxito (p)</label>
-            <input type="number" step="0.01" id="discP" class="form-control" value="0.80" min="0" max="1">
-          </div>
-        </div>
-        <p class="hero-desc"><small>Resuelve por ejemplo: "¿Cuál es la probabilidad de que el 6° alumno entrevistado sea el 4° que cursó la materia?" (r=4, x=6, p=0.8)</small></p>
-      `;
-    } else if (model === 'poisson') {
-      container.innerHTML = `
-        <div class="grid-3">
-          <div class="form-group">
-            <label class="form-label">Tasa λ (por unidad t)</label>
-            <input type="number" step="0.1" id="discLambda" class="form-control" value="5" min="0">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Intervalo t (μ = λ · t)</label>
-            <input type="number" step="0.1" id="discT" class="form-control" value="1.0" min="0">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Operación</label>
-            <select id="discOp" class="form-control" onchange="App.toggleDiscreteSecondK()">
-              <option value="eq">P(X = k) Exacto</option>
-              <option value="leq">P(X ≤ k) Acumulada Menor</option>
-              <option value="geq">P(X ≥ k) Acumulada Mayor</option>
-              <option value="between">P(k1 ≤ X ≤ k2) Intervalo</option>
-            </select>
-          </div>
-        </div>
-        <div class="grid-2">
-          <div class="form-group">
-            <label class="form-label">Valor k</label>
-            <input type="number" id="discK" class="form-control" value="7" min="0">
-          </div>
-          <div class="form-group" id="discK2Group" style="display:none;">
-            <label class="form-label">Valor k2</label>
-            <input type="number" id="discK2" class="form-control" value="7" min="0">
-          </div>
-        </div>
-      `;
-    } else if (model === 'hypergeometric') {
-      container.innerHTML = `
-        <div class="grid-4">
-          <div class="form-group">
-            <label class="form-label">Población (N)</label>
-            <input type="number" id="discHN" class="form-control" value="47" min="1">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Éxitos en Población (A)</label>
-            <input type="number" id="discHA" class="form-control" value="23" min="0">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Muestra (n)</label>
-            <input type="number" id="discHn" class="form-control" value="7" min="1">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Éxitos Muestra (k)</label>
-            <input type="number" id="discHk" class="form-control" value="2" min="0">
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Operación</label>
-          <select id="discOp" class="form-control">
-            <option value="eq">P(X = k)</option>
-            <option value="geq">P(X ≥ k)</option>
-            <option value="leq">P(X ≤ k)</option>
-          </select>
-        </div>
-        <p class="hero-desc"><small>Ejemplo Parcial: 47 peces en criadero, 23 surubíes, muestra de 7 peces.</small></p>
-      `;
-    } else if (model === 'geometric') {
-      container.innerHTML = `
-        <div class="grid-2">
-          <div class="form-group">
-            <label class="form-label">Probabilidad de Éxito (p)</label>
-            <input type="number" step="0.01" id="discP" class="form-control" value="0.25" min="0" max="1">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Ensayo del 1° Éxito (x)</label>
-            <input type="number" id="discX" class="form-control" value="4" min="1">
-          </div>
-        </div>
-      `;
-    }
-
-    const resBox = document.getElementById('discreteResults');
-    if (resBox) resBox.style.display = 'none';
-  },
-
-  toggleDiscreteSecondK() {
-    const op = document.getElementById('discOp').value;
-    const group = document.getElementById('discK2Group');
-    if (group) group.style.display = op === 'between' ? 'block' : 'none';
-  },
-
-  calculateDiscrete() {
-    const model = this.activeDiscreteModel;
-    const resBox = document.getElementById('discreteResults');
-    resBox.style.display = 'block';
-
-    if (model === 'binomial') {
-      const n = parseInt(document.getElementById('discN').value);
-      const p = parseFloat(document.getElementById('discP').value);
-      const k = parseInt(document.getElementById('discK').value);
-      const op = document.getElementById('discOp').value;
-      const k2 = op === 'between' ? parseInt(document.getElementById('discK2').value) : null;
-
-      const res = Solvers.solveBinomial(n, p, k, op, k2);
-
-      resBox.innerHTML = `
-        <h4>🎲 Distribución Binomial B(n = ${n}, p = ${p})</h4>
-        <div class="result-number">${MathUtils.formatProb(res.prob)}</div>
-        <div class="formula-box highlight">
-          <p><strong>Probabilidad calculada:</strong> ${res.description} = ${res.prob.toFixed(5)} (${(res.prob * 100).toFixed(2)}%)</p>
-          <p><strong>Esperanza E(X):</strong> μ = n · p = ${n} × ${p} = <strong>${res.mu.toFixed(2)}</strong></p>
-          <p><strong>Varianza Var(X):</strong> σ² = n · p · (1 - p) = <strong>${res.variance.toFixed(4)}</strong></p>
-          <p><strong>Desviación estándar:</strong> σ = <strong>${res.sigma.toFixed(4)}</strong></p>
-        </div>
-      `;
-    } else if (model === 'negativeBinomial') {
-      const r = parseInt(document.getElementById('discR').value);
-      const x = parseInt(document.getElementById('discX').value);
-      const p = parseFloat(document.getElementById('discP').value);
-
-      const res = Solvers.solveNegativeBinomial(r, p, x);
-
-      resBox.innerHTML = `
-        <h4>🎲 Distribución Binomial Negativa (Pascal) BN(r = ${r}, p = ${p})</h4>
-        <div class="result-number">${MathUtils.formatProb(res.prob, 5)}</div>
-        <div class="formula-box highlight">
-          <p class="math-expr">P(X = ${x}) = \\binom{${x} - 1}{${r} - 1} (${p})^{${r}} (${(1 - p).toFixed(2)})^{${x - r}}</p>
-          <p class="math-expr">P(X = ${x}) = \\binom{${x - 1}}{${r - 1}} (${p})^{${r}} (${(1 - p).toFixed(2)})^{${x - r}} = ${res.comb} × ${Math.pow(p, r).toFixed(4)} × ${Math.pow(1 - p, x - r).toFixed(4)}</p>
-          <p><strong>Esperanza E(X):</strong> r / p = ${r} / ${p} = <strong>${res.mu.toFixed(2)} ensayos</strong></p>
-          <p><strong>Varianza Var(X):</strong> r(1-p)/p² = <strong>${res.variance.toFixed(4)}</strong></p>
-        </div>
-      `;
-    } else if (model === 'poisson') {
-      const lambda = parseFloat(document.getElementById('discLambda').value);
-      const t = parseFloat(document.getElementById('discT').value);
-      const k = parseInt(document.getElementById('discK').value);
-      const op = document.getElementById('discOp').value;
-      const k2 = op === 'between' ? parseInt(document.getElementById('discK2').value) : null;
-
-      const res = Solvers.solvePoisson(lambda, t, k, op, k2);
-
-      resBox.innerHTML = `
-        <h4>⏱️ Distribución de Poisson (λ = ${lambda}, t = ${t} ⟹ μ = ${res.mu})</h4>
-        <div class="result-number">${MathUtils.formatProb(res.prob)}</div>
-        <div class="formula-box highlight">
-          <p><strong>Cálculo:</strong> ${res.description} = ${res.prob.toFixed(5)} (${(res.prob * 100).toFixed(2)}%)</p>
-          <p><strong>Parámetro de media:</strong> μ = λ · t = <strong>${res.mu}</strong></p>
-          <p><strong>Varianza:</strong> σ² = μ = <strong>${res.variance}</strong></p>
-          <p><strong>Desviación estándar:</strong> σ = <strong>${res.sigma.toFixed(4)}</strong></p>
-        </div>
-      `;
-    } else if (model === 'hypergeometric') {
-      const N = parseInt(document.getElementById('discHN').value);
-      const A = parseInt(document.getElementById('discHA').value);
-      const n = parseInt(document.getElementById('discHn').value);
-      const k = parseInt(document.getElementById('discHk').value);
-      const op = document.getElementById('discOp').value;
-
-      const res = Solvers.solveHypergeometric(N, A, n, k, op);
-
-      resBox.innerHTML = `
-        <h4>🐟 Distribución Hipergeométrica H(N = ${N}, A = ${A}, n = ${n})</h4>
-        <div class="result-number">${MathUtils.formatProb(res.prob)}</div>
-        <div class="formula-box highlight">
-          <p><strong>Probabilidad:</strong> ${res.description} = ${res.prob.toFixed(5)} (${(res.prob * 100).toFixed(2)}%)</p>
-          <p><strong>Esperanza E(X):</strong> n · (A / N) = ${n} × (${A} / ${N}) = <strong>${res.mu.toFixed(4)}</strong></p>
-          <p><strong>Varianza Var(X):</strong> <strong>${res.variance.toFixed(4)}</strong> (σ = ${res.sigma.toFixed(4)})</p>
-        </div>
-      `;
-    }
-  },
-
-  // -------------------------------------------------------------
-  // Continuous Distributions Solver
-  // -------------------------------------------------------------
-  switchContinuousModel(model) {
-    this.activeContinuousModel = model;
-    const container = document.getElementById('continuousInputsContainer');
-    const chartBox = document.getElementById('normalChartContainer');
-    if (!container) return;
-
-    if (model === 'normal') {
-      chartBox.style.display = 'flex';
-      container.innerHTML = `
-        <div class="grid-2">
-          <div class="form-group">
-            <label class="form-label">Media (μ)</label>
-            <input type="number" step="0.1" id="contMu" class="form-control" value="8.2" oninput="App.drawNormalCurve()">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Desvío Estándar (σ)</label>
-            <input type="number" step="0.1" id="contSigma" class="form-control" value="1.1" min="0.001" oninput="App.drawNormalCurve()">
-          </div>
-        </div>
-        <div class="grid-3">
-          <div class="form-group">
-            <label class="form-label">Operación</label>
-            <select id="contOp" class="form-control" onchange="App.toggleNormalInputs()">
-              <option value="between">P(x1 ≤ X ≤ x2) Intervalo</option>
-              <option value="leq">P(X ≤ x) Menor o Igual</option>
-              <option value="geq">P(X ≥ x) Mayor o Igual</option>
-              <option value="percentile">Percentil Inverso: Hallar x para P(X < x)</option>
-            </select>
-          </div>
-          <div class="form-group" id="contX1Group">
-            <label class="form-label" id="contX1Label">Límite x1</label>
-            <input type="number" step="0.1" id="contX1" class="form-control" value="7.0" oninput="App.drawNormalCurve()">
-          </div>
-          <div class="form-group" id="contX2Group">
-            <label class="form-label">Límite x2</label>
-            <input type="number" step="0.1" id="contX2" class="form-control" value="10.0" oninput="App.drawNormalCurve()">
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Población / Muestra para estimar cantidad esperada (Opcional N)</label>
-          <input type="number" id="contPopSize" class="form-control" value="20" placeholder="Ej: 20 encuentros o 1500 estudiantes">
-        </div>
-      `;
-      setTimeout(() => this.drawNormalCurve(), 50);
-    } else if (model === 'uniform') {
-      chartBox.style.display = 'none';
-      container.innerHTML = `
-        <div class="grid-2">
-          <div class="form-group">
-            <label class="form-label">Límite Inferior (a)</label>
-            <input type="number" step="0.1" id="uniA" class="form-control" value="4.0">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Límite Superior (b)</label>
-            <input type="number" step="0.1" id="uniB" class="form-control" value="10.0">
-          </div>
-        </div>
-        <div class="grid-3">
-          <div class="form-group">
-            <label class="form-label">Operación</label>
-            <select id="uniOp" class="form-control">
-              <option value="geq">P(X ≥ x1)</option>
-              <option value="leq">P(X ≤ x1)</option>
-              <option value="between">P(x1 ≤ X ≤ x2)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Valor x1</label>
-            <input type="number" step="0.1" id="uniX1" class="form-control" value="8.0">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Valor x2 (si es intervalo)</label>
-            <input type="number" step="0.1" id="uniX2" class="form-control" value="10.0">
-          </div>
-        </div>
-        <p class="hero-desc"><small>Ejemplo Parcial: Lead time de repuesto distribuido uniformemente entre 4 y 10 días.</small></p>
-      `;
-    } else if (model === 'gamma') {
-      chartBox.style.display = 'none';
-      container.innerHTML = `
-        <div class="grid-2">
-          <div class="form-group">
-            <label class="form-label">Parámetro de Forma α (o eventos r)</label>
-            <input type="number" step="1" id="gammaAlpha" class="form-control" value="2" min="1">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Parámetro de Escala β (tiempo medio entre eventos)</label>
-            <input type="number" step="0.1" id="gammaBeta" class="form-control" value="12" min="0.1">
-          </div>
-        </div>
-        <div class="grid-3">
-          <div class="form-group">
-            <label class="form-label">Operación</label>
-            <select id="gammaOp" class="form-control">
-              <option value="leq">P(Y ≤ t1)</option>
-              <option value="between">P(t1 ≤ Y ≤ t2)</option>
-              <option value="geq">P(Y ≥ t1)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Tiempo t1</label>
-            <input type="number" step="1" id="gammaT1" class="form-control" value="30">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Tiempo t2</label>
-            <input type="number" step="1" id="gammaT2" class="form-control" value="48">
-          </div>
-        </div>
-        <p class="hero-desc"><small>Ejemplo Parcial Heladería: Y ~ Gamma(α=2 clientes, β=12 seg). Hallar P(Y ≤ 30) y P(30 ≤ Y ≤ 48).</small></p>
-      `;
-    } else if (model === 'exponential') {
-      chartBox.style.display = 'none';
-      container.innerHTML = `
-        <div class="grid-2">
-          <div class="form-group">
-            <label class="form-label">Parámetro β (media = 1/λ)</label>
-            <input type="number" step="0.1" id="expBeta" class="form-control" value="12.0" min="0.01">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Tiempo x</label>
-            <input type="number" step="0.1" id="expX" class="form-control" value="15.0">
-          </div>
-        </div>
-      `;
-    }
-
-    const resBox = document.getElementById('continuousResults');
-    if (resBox) resBox.style.display = 'none';
-  },
-
-  toggleNormalInputs() {
-    const op = document.getElementById('contOp').value;
-    const x2Group = document.getElementById('contX2Group');
-    const x1Label = document.getElementById('contX1Label');
-
-    if (op === 'percentile') {
-      x1Label.textContent = 'Probabilidad deseada p (ej: 0.25)';
-      x2Group.style.display = 'none';
-    } else if (op === 'between') {
-      x1Label.textContent = 'Límite x1';
-      x2Group.style.display = 'block';
-    } else {
-      x1Label.textContent = 'Límite x';
-      x2Group.style.display = 'none';
-    }
-    this.drawNormalCurve();
-  },
-
-  calculateContinuous() {
-    const model = this.activeContinuousModel;
-    const resBox = document.getElementById('continuousResults');
-    resBox.style.display = 'block';
-
-    if (model === 'normal') {
-      const mu = parseFloat(document.getElementById('contMu').value);
-      const sigma = parseFloat(document.getElementById('contSigma').value);
-      const op = document.getElementById('contOp').value;
-      const x1 = parseFloat(document.getElementById('contX1').value);
-      const x2 = op === 'between' ? parseFloat(document.getElementById('contX2').value) : null;
-      const popSize = parseFloat(document.getElementById('contPopSize').value) || null;
-
-      if (op === 'percentile') {
-        const p = x1;
-        const res = Solvers.solveNormalPercentile(mu, sigma, p);
-        resBox.innerHTML = `
-          <h4>🔔 Cálculo Inverso / Percentil en Distribución Normal</h4>
-          <div class="result-number">x = ${res.x.toFixed(4)}</div>
-          <div class="formula-box highlight">
-            <p><strong>Probabilidad acumulada deseada:</strong> P(X < x) = ${p}</p>
-            <p><strong>Valor estandarizado Z:</strong> z = ${res.z.toFixed(4)}</p>
-            <p class="math-expr">x = \\mu + z \\cdot \\sigma = ${mu} + (${res.z.toFixed(4)}) \\cdot ${sigma} = <strong>${res.x.toFixed(4)}</strong></p>
-          </div>
-        `;
-      } else {
-        const res = Solvers.solveNormal(mu, sigma, x1, x2, op, popSize);
-        let zText = '';
-        if (res.z1 !== null && res.z2 !== null) {
-          zText = `<p class="math-expr">z_1 = \\frac{${Math.min(x1, x2)} - ${mu}}{${sigma}} = ${res.z1.toFixed(2)}, \\quad z_2 = \\frac{${Math.max(x1, x2)} - ${mu}}{${sigma}} = ${res.z2.toFixed(2)}</p>`;
-        } else if (res.z1 !== null) {
-          zText = `<p class="math-expr">z = \\frac{${x1} - ${mu}}{${sigma}} = ${res.z1.toFixed(2)}</p>`;
-        }
-
-        let popText = res.expectedCount !== null ?
-          `<p><strong>Cantidad esperada en población N = ${popSize}:</strong> E = N · P = ${popSize} × ${res.prob.toFixed(4)} = <strong class="text-success">${res.expectedCount.toFixed(2)} individuos</strong></p>` : '';
-
-        resBox.innerHTML = `
-          <h4>🔔 Distribución Normal N(μ = ${mu}, σ = ${sigma})</h4>
-          <div class="result-number">${MathUtils.formatProb(res.prob)}</div>
-          <div class="formula-box highlight">
-            <p><strong>Estandarización Z:</strong></p>
-            ${zText}
-            <p><strong>Probabilidad:</strong> ${res.description} = <strong>${res.prob.toFixed(4)} (${(res.prob * 100).toFixed(2)}%)</strong></p>
-            ${popText}
-          </div>
-        `;
-      }
-      this.drawNormalCurve();
-    } else if (model === 'uniform') {
-      const a = parseFloat(document.getElementById('uniA').value);
-      const b = parseFloat(document.getElementById('uniB').value);
-      const op = document.getElementById('uniOp').value;
-      const x1 = parseFloat(document.getElementById('uniX1').value);
-      const x2 = parseFloat(document.getElementById('uniX2').value);
-
-      const res = Solvers.solveUniformContinuous(a, b, x1, x2, op);
-
-      resBox.innerHTML = `
-        <h4>📏 Distribución Uniforme Continua U(${a}, ${b})</h4>
-        <div class="result-number">${MathUtils.formatProb(res.prob)}</div>
-        <div class="formula-box highlight">
-          <p><strong>Probabilidad:</strong> ${res.description} = <strong>${res.prob.toFixed(4)} (${(res.prob * 100).toFixed(2)}%)</strong></p>
-          <p><strong>Media E(X):</strong> (a + b) / 2 = (${a} + ${b}) / 2 = <strong>${res.mu.toFixed(2)}</strong></p>
-          <p><strong>Varianza Var(X):</strong> (b - a)² / 12 = (${b} - ${a})² / 12 = <strong>${res.variance.toFixed(4)}</strong></p>
-          <p><strong>Desvío Estándar σ:</strong> <strong>${res.sigma.toFixed(4)}</strong></p>
-        </div>
-      `;
-    } else if (model === 'gamma') {
-      const alpha = parseFloat(document.getElementById('gammaAlpha').value);
-      const beta = parseFloat(document.getElementById('gammaBeta').value);
-      const op = document.getElementById('gammaOp').value;
-      const t1 = parseFloat(document.getElementById('gammaT1').value);
-      const t2 = parseFloat(document.getElementById('gammaT2').value);
-
-      const res = Solvers.solveGamma(alpha, beta, t1, t2, op);
-
-      resBox.innerHTML = `
-        <h4>⏱️ Distribución Gamma & Erlang (α = ${alpha}, β = ${beta})</h4>
-        <div class="result-number">${MathUtils.formatProb(res.prob)}</div>
-        <div class="formula-box highlight">
-          <p><strong>Probabilidad calculada:</strong> ${res.description} = <strong>${res.prob.toFixed(4)} (${(res.prob * 100).toFixed(2)}%)</strong></p>
-          <p><strong>Teorema de la Cátedra (Relación Poisson-Gamma):</strong></p>
-          <p class="math-expr">P(Y \\le t) = P(N_t \\ge \\alpha) \\quad \\text{con } \\mu = t / \\beta</p>
-          <p><strong>Media E(Y):</strong> α · β = ${alpha} × ${beta} = <strong>${res.mu.toFixed(2)}</strong></p>
-          <p><strong>Varianza Var(Y):</strong> α · β² = <strong>${res.variance.toFixed(2)}</strong> (σ = ${res.sigma.toFixed(2)})</p>
-        </div>
-      `;
-    }
-  },
-
-  drawNormalCurve() {
-    const canvas = document.getElementById('normalCanvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const width = canvas.parentElement.clientWidth || 500;
-    const height = 260;
-    canvas.width = width;
-    canvas.height = height;
-
-    const mu = parseFloat(document.getElementById('contMu').value) || 0;
-    const sigma = parseFloat(document.getElementById('contSigma').value) || 1;
-    const op = document.getElementById('contOp').value;
-    const x1 = parseFloat(document.getElementById('contX1').value) || 0;
-    const x2 = parseFloat(document.getElementById('contX2').value) || 0;
-
-    ctx.clearRect(0, 0, width, height);
-
-    // X Range: μ ± 3.6σ
-    const xMin = mu - 3.6 * sigma;
-    const xMax = mu + 3.6 * sigma;
-    const padX = 35;
-    const padY = 30;
-    const chartW = width - padX * 2;
-    const chartH = height - padY * 2;
-
-    const maxDensity = MathUtils.normalPDF(mu, mu, sigma);
-
-    function toCanvasX(x) {
-      return padX + ((x - xMin) / (xMax - xMin)) * chartW;
-    }
-
-    function toCanvasY(y) {
-      return height - padY - (y / maxDensity) * (chartH - 20);
-    }
-
-    // Determine shaded bounds
-    let shadeMin = -Infinity;
-    let shadeMax = Infinity;
-    if (op === 'leq') {
-      shadeMin = xMin;
-      shadeMax = x1;
-    } else if (op === 'geq') {
-      shadeMin = x1;
-      shadeMax = xMax;
-    } else if (op === 'between') {
-      shadeMin = Math.min(x1, x2);
-      shadeMax = Math.max(x1, x2);
-    }
-
-    // Draw shaded polygon
-    ctx.beginPath();
-    ctx.moveTo(toCanvasX(shadeMin < xMin ? xMin : shadeMin), height - padY);
-    const numPoints = 120;
-    for (let i = 0; i <= numPoints; i++) {
-      const curX = xMin + (i / numPoints) * (xMax - xMin);
-      if (curX >= shadeMin && curX <= shadeMax) {
-        const pdf = MathUtils.normalPDF(curX, mu, sigma);
-        ctx.lineTo(toCanvasX(curX), toCanvasY(pdf));
-      }
-    }
-    ctx.lineTo(toCanvasX(shadeMax > xMax ? xMax : shadeMax), height - padY);
-    ctx.closePath();
-
-    const shadeGrad = ctx.createLinearGradient(0, padY, 0, height - padY);
-    shadeGrad.addColorStop(0, 'rgba(99, 102, 241, 0.65)');
-    shadeGrad.addColorStop(1, 'rgba(6, 182, 212, 0.15)');
-    ctx.fillStyle = shadeGrad;
-    ctx.fill();
-
-    // Draw the Bell Curve outline
-    ctx.beginPath();
-    for (let i = 0; i <= numPoints; i++) {
-      const curX = xMin + (i / numPoints) * (xMax - xMin);
-      const pdf = MathUtils.normalPDF(curX, mu, sigma);
-      const cx = toCanvasX(curX);
-      const cy = toCanvasY(pdf);
-      if (i === 0) ctx.moveTo(cx, cy);
-      else ctx.lineTo(cx, cy);
-    }
-    ctx.strokeStyle = '#818cf8';
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-
-    // Draw Baseline Axis
-    ctx.strokeStyle = '#4b5563';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(padX, height - padY);
-    ctx.lineTo(width - padX, height - padY);
-    ctx.stroke();
-
-    // Draw Mean line
-    const meanX = toCanvasX(mu);
-    ctx.strokeStyle = 'rgba(245, 158, 11, 0.8)';
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(meanX, toCanvasY(maxDensity));
-    ctx.lineTo(meanX, height - padY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Text labels
-    ctx.fillStyle = '#f3f4f6';
-    ctx.font = '11px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(`μ = ${mu}`, meanX, height - padY + 16);
-
-    // Standard deviation markers
-    [-2, -1, 1, 2].forEach(k => {
-      const markX = toCanvasX(mu + k * sigma);
-      ctx.fillStyle = '#9ca3af';
-      ctx.fillText(`${k > 0 ? '+' : ''}${k}σ`, markX, height - padY + 16);
-    });
-  },
-
-  // -------------------------------------------------------------
-  // Combinatorics Solver
-  // -------------------------------------------------------------
-  calculateCombinatorics() {
-    const m = parseInt(document.getElementById('combM').value);
-    const n = parseInt(document.getElementById('combN').value);
-
-    const res = Solvers.solveCombinatorics(m, n);
-    const resBox = document.getElementById('combinatoricsResults');
-    resBox.style.display = 'block';
-
-    resBox.innerHTML = `
-      <h4>🔢 Resultados de Conteo (m = ${m}, n = ${n})</h4>
-      <div class="grid-2 mt-2">
-        <div class="formula-box">
-          <p><strong>Combinaciones C(m, n)</strong> (No importa el orden):</p>
-          <div class="result-number" style="font-size:1.4rem;">${res.combinations.toLocaleString()}</div>
-          <p class="math-expr">C_{${m}}^{${n}} = \\frac{${m}!}{${n}!(${m}-${n})!}</p>
-        </div>
-        <div class="formula-box">
-          <p><strong>Variaciones V(m, n)</strong> (Importa el orden):</p>
-          <div class="result-number" style="font-size:1.4rem;">${res.variations.toLocaleString()}</div>
-          <p class="math-expr">V_{${m}}^{${n}} = \\frac{${m}!}{(${m}-${n})!}</p>
-        </div>
-      </div>
-      <div class="grid-2 mt-1">
-        <div class="formula-box">
-          <p><strong>Variaciones con Repetición VR(m, n):</strong></p>
-          <p class="math-expr">m^n = ${m}^{${n}} = <strong>${res.variationsRep.toLocaleString()}</strong></p>
-        </div>
-        <div class="formula-box">
-          <p><strong>Permutaciones P(m) = m!:</strong></p>
-          <p class="math-expr">${m}! = <strong>${res.permutations.toLocaleString()}</strong></p>
-        </div>
-      </div>
-    `;
-  },
-
-  // -------------------------------------------------------------
-  // Parciales View
-  // -------------------------------------------------------------
   renderExams() {
     const container = document.getElementById('examsContainer');
-    if (!container || !ExamData) return;
+    if (!container || typeof ExamData2025 === 'undefined') return;
 
-    container.innerHTML = ExamData.map((exam, examIdx) => `
-      <div class="exam-accordion" id="examAccordion_${exam.id}">
-        <div class="exam-accordion-header" onclick="App.toggleExamAccordion('${exam.id}')">
-          <div>
-            <div style="font-size:1.05rem; font-weight:700;">${exam.title}</div>
-            <small style="color:var(--text-secondary);">${exam.subtitle}</small>
-          </div>
-          <span id="examChevron_${exam.id}">▼</span>
-        </div>
-        <div class="exam-accordion-body" id="examBody_${exam.id}">
-          ${exam.exercises.map((ex, exIdx) => `
-            <div class="exercise-card">
-              <div class="exercise-card-header">
-                <div class="exercise-card-title">${ex.title}</div>
-                <div style="display:flex; gap:0.4rem;">
-                  <button class="btn btn-primary btn-sm" onclick="App.loadExerciseInSolver('${exam.id}', ${ex.num})">🚀 Abrir en Calculadora</button>
-                  <button class="solution-toggle-btn" onclick="App.toggleSolution('sol_${exam.id}_${ex.num}')">👁️ Ver Solución</button>
-                </div>
-              </div>
-              <div>${ex.statement}</div>
-              <div id="sol_${exam.id}_${ex.num}" class="solution-content">
-                ${ex.solution}
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `).join('');
-  },
+    const exam = ExamData2025.find(e => e.id === this.currentExam) || ExamData2025[0];
 
-  toggleExamAccordion(id) {
-    const body = document.getElementById(`examBody_${id}`);
-    const chevron = document.getElementById(`examChevron_${id}`);
-    if (!body) return;
-    const isHidden = body.style.display === 'none';
-    body.style.display = isHidden ? 'block' : 'none';
-    if (chevron) chevron.textContent = isHidden ? '▼' : '▶';
-  },
-
-  toggleSolution(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.toggle('open');
-  },
-
-  loadExerciseInSolver(examId, exNum) {
-    const exam = ExamData.find(e => e.id === examId);
-    if (!exam) return;
-    const ex = exam.exercises.find(x => x.num === exNum);
-    if (!ex) return;
-
-    if (ex.solverTarget === 'contingency') {
-      this.openSolver('contingency', examId === 'parcial-2' ? 'parcial2' : (examId === 'parcial-4' ? 'parcial4' : 'parcial1'));
-    } else if (ex.solverTarget === 'bayes') {
-      this.openSolver('bayes', examId === 'parcial-4' ? 'accidentes' : 'farmacias');
-    } else if (ex.solverTarget === 'discrete') {
-      this.openSolver('discrete', 'negativeBinomial');
-    } else if (ex.solverTarget === 'poissonGamma') {
-      this.openSolver('discrete', 'poissonGamma');
-    } else if (ex.solverTarget === 'normal' || ex.solverTarget === 'normalPercentile') {
-      this.openSolver('continuous', 'normal');
-    } else if (ex.solverTarget === 'uniformContinuous') {
-      this.openSolver('continuous', 'uniform');
-    } else if (ex.solverTarget === 'hypergeometric') {
-      this.openSolver('discrete', 'binomial');
-      document.getElementById('discreteModelSelect').value = 'hypergeometric';
-      this.switchDiscreteModel('hypergeometric');
-    }
-  },
-
-  viewExam(id) {
-    this.navigateTo('exams');
-    const body = document.getElementById(`examBody_${id}`);
-    const chevron = document.getElementById(`examChevron_${id}`);
-    if (body) {
-      body.style.display = 'block';
-      if (chevron) chevron.textContent = '▼';
-    }
-    const acc = document.getElementById(`examAccordion_${id}`);
-    if (acc) acc.scrollIntoView({ behavior: 'smooth' });
-  },
-
-  // -------------------------------------------------------------
-  // Statistical Tables Tab
-  // -------------------------------------------------------------
-  switchStatTable(tableType) {
-    const secNormal = document.getElementById('statTableNormalSection');
-    const secGamma = document.getElementById('statTableGammaSection');
-    const pillN = document.getElementById('pillTabNormal');
-    const pillG = document.getElementById('pillTabGamma');
-
-    if (tableType === 'normal') {
-      secNormal.style.display = 'block';
-      secGamma.style.display = 'none';
-      pillN.classList.add('active');
-      pillG.classList.remove('active');
-    } else {
-      secNormal.style.display = 'none';
-      secGamma.style.display = 'block';
-      pillN.classList.remove('active');
-      pillG.classList.add('active');
-    }
-  },
-
-  renderStatTables() {
-    this.renderNormalTable();
-    this.renderGammaTable();
-  },
-
-  renderNormalTable() {
-    const container = document.getElementById('normalTableContainer');
-    if (!container) return;
-
-    let html = `
-      <table class="stat-table">
-        <thead>
-          <tr>
-            <th>z</th>
-            <th>0.00</th><th>0.01</th><th>0.02</th><th>0.03</th><th>0.04</th>
-            <th>0.05</th><th>0.06</th><th>0.07</th><th>0.08</th><th>0.09</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
-
-    for (let r = 0; r <= 35; r++) {
-      const zRow = (r / 10).toFixed(1);
-      html += `<tr id="normRow_${r}"><td class="col-z">${zRow}</td>`;
-      for (let c = 0; c < 10; c++) {
-        const z = parseFloat(zRow) + c * 0.01;
-        const prob = MathUtils.standardNormalCDF(z);
-        html += `<td id="normCell_${r}_${c}">${prob.toFixed(4)}</td>`;
-      }
-      html += `</tr>`;
-    }
-
-    html += `</tbody></table>`;
-    container.innerHTML = html;
-  },
-
-  highlightZTable(val) {
-    const z = parseFloat(val);
-    if (isNaN(z) || z < 0 || z > 3.59) return;
-
-    const rowIdx = Math.floor(z * 10);
-    const colIdx = Math.round((z - rowIdx / 10) * 100);
-
-    document.querySelectorAll('.stat-table td').forEach(td => td.style.background = '');
-
-    const target = document.getElementById(`normCell_${rowIdx}_${colIdx}`);
-    if (target) {
-      target.style.background = '#6366f1';
-      target.style.color = '#ffffff';
-      target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-  },
-
-  renderGammaTable() {
-    const container = document.getElementById('gammaTableContainer');
-    if (!container) return;
-
-    let html = `
-      <table class="stat-table">
-        <thead>
-          <tr>
-            <th>α</th><th>Γ(α)</th>
-            <th>α</th><th>Γ(α)</th>
-            <th>α</th><th>Γ(α)</th>
-            <th>α</th><th>Γ(α)</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
-
-    for (let i = 0; i < 25; i++) {
-      html += `<tr>`;
-      for (let c = 0; c < 4; c++) {
-        const alpha = 1.00 + (i + c * 25) * 0.01;
-        if (alpha <= 1.99) {
-          const val = MathUtils.gamma(alpha);
-          html += `<td class="col-z">${alpha.toFixed(2)}</td><td>${val.toFixed(5)}</td>`;
-        }
-      }
-      html += `</tr>`;
-    }
-
-    html += `</tbody></table>`;
-    container.innerHTML = html;
-  }
-};
-
-// Auto initialize on DOM ready
-document.addEventListener('DOMContentLoaded', () => App.init());
-
-// ==========================================================================
-// DISTRIBUTION GUIDE & EXAM SHEET TEMPLATES (TP3 & TP4)
-// ==========================================================================
-
-App.initDistGuide = function() {
-  this.currentGuideFilter = 'all';
-  this.renderDistGuide();
-};
-
-App.renderDistGuide = function() {
-  const container = document.getElementById('distGuideContainer');
-  if (!container || typeof DistGuideData === 'undefined') return;
-
-  const filter = this.currentGuideFilter;
-  const search = (document.getElementById('distGuideSearchInput')?.value || '').toLowerCase().trim();
-
-  let list = DistGuideData.filter(d => {
-    if (filter === 'tp3' && !d.tp.includes('TP 3')) return false;
-    if (filter === 'tp4' && !d.tp.includes('TP 4')) return false;
-    if (search) {
-      const matchName = d.name.toLowerCase().includes(search);
-      const matchNot = d.notation.toLowerCase().includes(search);
-      const matchSummary = d.summary.toLowerCase().includes(search);
-      const matchKw = d.keywords.some(k => k.toLowerCase().includes(search));
-      const matchEx = d.example.statement.toLowerCase().includes(search);
-      return matchName || matchNot || matchSummary || matchKw || matchEx;
-    }
-    return true;
-  });
-
-  if (list.length === 0) {
     container.innerHTML = `
-      <div class="result-card text-center" style="padding: 2rem;">
-        <p>No se encontraron distribuciones para el término ingresado.</p>
-        <button class="btn btn-secondary btn-sm mt-1" onclick="App.clearDistGuideSearch()">Limpiar búsqueda</button>
+      <div class="solver-card">
+        <div class="solver-header">
+          <div>
+            <h3 style="font-size:1.2rem; font-weight:800;">${exam.title}</h3>
+            <p class="hero-desc" style="margin-bottom:0;">${exam.subtitle}</p>
+          </div>
+          <span class="badge badge-success">${exam.exercises.length} Ejercicios</span>
+        </div>
+
+        ${exam.exercises.map(ex => `
+          <div class="exercise-card">
+            <div class="exercise-card-header">
+              <div class="exercise-card-title">${ex.title}</div>
+              <button class="btn btn-primary btn-sm" onclick="App.openDistInCalculator('${ex.distTarget}')">🧮 Abrir en Calculadora</button>
+            </div>
+            <div>${ex.statement}</div>
+            <div class="mt-2">
+              <strong style="color:#34d399; font-size:0.88rem; display:block; margin-bottom:0.4rem;">📝 DESARROLLO Y RESOLUCIÓN OFICIAL PARA LA HOJA:</strong>
+              ${ex.solution}
+            </div>
+          </div>
+        `).join('')}
       </div>
     `;
-    return;
-  }
+  },
 
-  container.innerHTML = list.map(d => `
-    <div class="guide-card" id="guideCard_${d.id}">
-      <div class="guide-card-header">
-        <div class="guide-card-title">
-          <span>${d.icon}</span>
-          <span>${d.name}</span>
-          <span class="badge ${d.tp.includes('TP 3') ? 'badge-primary' : 'badge-secondary'}" style="font-size:0.75rem;">${d.tp}</span>
-        </div>
-        <span class="badge badge-success" style="font-size:0.9rem; font-family:monospace;">${d.notation}</span>
-      </div>
-
-      <p class="hero-desc" style="margin-bottom:0.6rem;">${d.summary}</p>
-
-      <!-- Palabras Clave en el Enunciado -->
-      <div style="margin: 0.8rem 0;">
-        <strong style="font-size:0.82rem; color:var(--secondary); text-transform:uppercase;">🎯 Palabras Clave que la delatan en el enunciado:</strong>
-        <div class="keywords-tag-list">
-          ${d.keywords.map(k => `<span class="keyword-tag">⚡ ${k}</span>`).join('')}
-        </div>
-      </div>
-
-      <!-- Ejemplo Mínimo Resuelto del TP -->
-      <div class="formula-box highlight">
-        <strong style="color:var(--primary);">📌 Ejemplo Mínimo Típico (de Parcial / TP):</strong>
-        <p style="margin-top:0.3rem;"><em>"${d.example.statement}"</em></p>
-      </div>
-
-      <!-- Qué poner en la hoja del examen (Plantilla) -->
-      <div style="margin-top: 1rem;">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.4rem;">
-          <strong style="font-size:0.92rem; color:#34d399;">📝 QUÉ PONER EN LA HOJA DEL EXAMEN (Paso a Paso):</strong>
-          <button class="btn btn-secondary btn-sm" onclick="App.toggleSheetTemplate('${d.id}')">👁️ Mostrar / Ocultar Plantilla</button>
-        </div>
-        <div id="sheet_${d.id}">
-          ${d.whatToWrite}
-        </div>
-      </div>
-
-      <!-- Mini Calculadora Interactiva Directa -->
-      <div class="calc-mini-box">
-        <strong style="font-size:0.85rem; color:var(--text-primary); display:block; margin-bottom:0.6rem;">🧮 Mini-Calculadora Rápida para este Ejemplo:</strong>
-        ${App.renderMiniCalculatorForm(d)}
-        <div id="miniRes_${d.id}" class="mt-1" style="display:none;"></div>
-      </div>
-    </div>
-  `).join('');
-};
-
-App.toggleSheetTemplate = function(id) {
-  const el = document.getElementById(`sheet_${id}`);
-  if (!el) return;
-  el.style.display = el.style.display === 'none' ? 'block' : 'none';
-};
-
-App.filterDistGuide = function(filter) {
-  this.currentGuideFilter = filter;
-  document.querySelectorAll('#tab-guide .pills-nav .pill-item').forEach(b => {
-    b.classList.toggle('active', b.dataset.filter === filter);
-  });
-  this.renderDistGuide();
-};
-
-App.searchDistGuide = function(query) {
-  this.renderDistGuide();
-};
-
-App.clearDistGuideSearch = function() {
-  const inp = document.getElementById('distGuideSearchInput');
-  if (inp) inp.value = '';
-  this.renderDistGuide();
-};
-
-// Wizard Logic
-App.wizardSelectType = function(type) {
-  const step2 = document.getElementById('wizardStep2');
-  const title = document.getElementById('wizardStep2Title');
-  const optContainer = document.getElementById('wizardStep2Options');
-  if (!step2 || !optContainer) return;
-
-  step2.style.display = 'block';
-
-  if (type === 'discreta') {
-    title.textContent = 'Paso 2: ¿Qué situación describe tu enunciado discreto?';
-    optContainer.innerHTML = `
-      <div class="wizard-btn" onclick="App.wizardJumpTo('binomial')">
-        <strong>🎲 Muestra fija n con probabilidad p (Con reposición)</strong>
-        <small>Ej: De 10 alumnos, el 80% aprueba. ¿P(8 aprueben)? ➔ Binomial B(n, p)</small>
-      </div>
-      <div class="wizard-btn" onclick="App.wizardJumpTo('hypergeometric')">
-        <strong>🐟 Muestra n extraída SIN REEMPLAZO de población N</strong>
-        <small>Ej: De 47 peces hay 23 surubíes, pescan 7 sin reposición ➔ Hipergeométrica H(N, A, n)</small>
-      </div>
-      <div class="wizard-btn" onclick="App.wizardJumpTo('poisson')">
-        <strong>⏱️ Tasa media en el tiempo o espacio (por minuto, hora)</strong>
-        <small>Ej: Llegan 5 clientes por minuto. ¿P(7 clientes)? ➔ Poisson(μ = λt)</small>
-      </div>
-      <div class="wizard-btn" onclick="App.wizardJumpTo('negativeBinomial')">
-        <strong>🎯 Pregunta por ensayos hasta conseguir r éxitos</strong>
-        <small>Ej: ¿El 6° alumno sea el 4° que cursó la materia? ➔ Binomial Negativa (Pascal)</small>
-      </div>
-      <div class="wizard-btn" onclick="App.wizardJumpTo('geometric')">
-        <strong>🎲 Ensayos necesarios hasta el PRIMER éxito (r = 1)</strong>
-        <small>Ej: Lanzar hasta encestar por primera vez ➔ Geométrica G(p)</small>
-      </div>
-    `;
-  } else {
-    title.textContent = 'Paso 2: ¿Qué forma o magnitud continua describe tu enunciado?';
-    optContainer.innerHTML = `
-      <div class="wizard-btn" onclick="App.wizardJumpTo('normal')">
-        <strong>🔔 Campana simétrica con media μ y desvío estándar σ</strong>
-        <small>Ej: Duración media 8.2 hs y desvío 1.1 hs. ¿P(7 ≤ X ≤ 10)? ➔ Normal N(μ, σ²)</small>
-      </div>
-      <div class="wizard-btn" onclick="App.wizardJumpTo('uniformContinuous')">
-        <strong>📏 Equiprobable en un intervalo acotado [a, b] (Lead time)</strong>
-        <small>Ej: Tiempo de reposición distribuido entre 4 y 10 días ➔ Uniforme U(a, b)</small>
-      </div>
-      <div class="wizard-btn" onclick="App.wizardJumpTo('gamma')">
-        <strong>⏳ Tiempo de espera continuo hasta que ocurran α eventos</strong>
-        <small>Ej: Heladería recibe 5 clientes/min. ¿Tiempo hasta que lleguen 2 clientes? ➔ Gamma(α, β)</small>
-      </div>
-      <div class="wizard-btn" onclick="App.wizardJumpTo('exponential')">
-        <strong>⚡ Tiempo continuo hasta el PRIMER evento (sin memoria)</strong>
-        <small>Ej: Tiempo entre llegadas con media β minutos ➔ Exponencial Exp(β)</small>
-      </div>
-      <div class="wizard-btn" onclick="App.wizardJumpTo('weibull')">
-        <strong>⚙️ Tiempo hasta la falla en sistemas físicos con desgaste</strong>
-        <small>Ej: Vida útil de rodamientos con escala δ y forma β ➔ Weibull(δ, β)</small>
-      </div>
-    `;
+  openDistInCalculator(distId) {
+    this.navigateTo('calculator');
+    this.selectDist(distId);
   }
 };
 
-App.wizardJumpTo = function(distId) {
-  // Ensure we are viewing that card
-  this.currentGuideFilter = 'all';
-  document.querySelectorAll('#tab-guide .pills-nav .pill-item').forEach(b => {
-    b.classList.toggle('active', b.dataset.filter === 'all');
-  });
-  const inp = document.getElementById('distGuideSearchInput');
-  if (inp) inp.value = '';
-  this.renderDistGuide();
-
-  setTimeout(() => {
-    const card = document.getElementById(`guideCard_${distId}`);
-    if (card) {
-      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      card.style.borderColor = '#10b981';
-      card.style.boxShadow = '0 0 25px rgba(16, 185, 129, 0.4)';
-      setTimeout(() => {
-        card.style.borderColor = '';
-        card.style.boxShadow = '';
-      }, 2500);
-    }
-  }, 100);
-};
-
-// Render form inputs for mini calculators
-App.renderMiniCalculatorForm = function(d) {
-  const p = d.example.params;
-  if (d.id === 'binomial') {
-    return `
-      <div class="grid-3">
-        <div><label class="form-label">n</label><input type="number" id="mini_n" class="form-control" value="${p.n}"></div>
-        <div><label class="form-label">p</label><input type="number" step="0.05" id="mini_p" class="form-control" value="${p.p}"></div>
-        <div><label class="form-label">k</label><input type="number" id="mini_k" class="form-control" value="${p.k}"></div>
-      </div>
-      <button class="btn btn-primary btn-sm mt-1" onclick="App.calcMiniBinomial()">Calcular P(X = k)</button>
-    `;
-  } else if (d.id === 'negativeBinomial') {
-    return `
-      <div class="grid-3">
-        <div><label class="form-label">r (éxitos)</label><input type="number" id="mini_nb_r" class="form-control" value="${p.r}"></div>
-        <div><label class="form-label">x (ensayos)</label><input type="number" id="mini_nb_x" class="form-control" value="${p.x}"></div>
-        <div><label class="form-label">p</label><input type="number" step="0.05" id="mini_nb_p" class="form-control" value="${p.p}"></div>
-      </div>
-      <button class="btn btn-primary btn-sm mt-1" onclick="App.calcMiniNegativeBinomial()">Calcular P(X = x)</button>
-    `;
-  } else if (d.id === 'hypergeometric') {
-    return `
-      <div class="grid-4">
-        <div><label class="form-label">N</label><input type="number" id="mini_h_N" class="form-control" value="${p.N}"></div>
-        <div><label class="form-label">A</label><input type="number" id="mini_h_A" class="form-control" value="${p.A}"></div>
-        <div><label class="form-label">n</label><input type="number" id="mini_h_n" class="form-control" value="${p.n}"></div>
-        <div><label class="form-label">k</label><input type="number" id="mini_h_k" class="form-control" value="${p.k}"></div>
-      </div>
-      <button class="btn btn-primary btn-sm mt-1" onclick="App.calcMiniHypergeometric()">Calcular P(X = k)</button>
-    `;
-  } else if (d.id === 'poisson') {
-    return `
-      <div class="grid-3">
-        <div><label class="form-label">λ</label><input type="number" id="mini_poi_lambda" class="form-control" value="${p.lambda}"></div>
-        <div><label class="form-label">t</label><input type="number" step="0.1" id="mini_poi_t" class="form-control" value="${p.t}"></div>
-        <div><label class="form-label">k</label><input type="number" id="mini_poi_k" class="form-control" value="${p.k}"></div>
-      </div>
-      <button class="btn btn-primary btn-sm mt-1" onclick="App.calcMiniPoisson()">Calcular P(X = k)</button>
-    `;
-  } else if (d.id === 'normal') {
-    return `
-      <div class="grid-4">
-        <div><label class="form-label">μ</label><input type="number" step="0.1" id="mini_norm_mu" class="form-control" value="${p.mu}"></div>
-        <div><label class="form-label">σ</label><input type="number" step="0.1" id="mini_norm_sigma" class="form-control" value="${p.sigma}"></div>
-        <div><label class="form-label">x1</label><input type="number" step="0.1" id="mini_norm_x1" class="form-control" value="${p.x1}"></div>
-        <div><label class="form-label">x2</label><input type="number" step="0.1" id="mini_norm_x2" class="form-control" value="${p.x2}"></div>
-      </div>
-      <button class="btn btn-primary btn-sm mt-1" onclick="App.calcMiniNormal()">Calcular P(x1 ≤ X ≤ x2)</button>
-    `;
-  } else if (d.id === 'uniformContinuous') {
-    return `
-      <div class="grid-3">
-        <div><label class="form-label">a</label><input type="number" step="0.1" id="mini_uni_a" class="form-control" value="${p.a}"></div>
-        <div><label class="form-label">b</label><input type="number" step="0.1" id="mini_uni_b" class="form-control" value="${p.b}"></div>
-        <div><label class="form-label">x1</label><input type="number" step="0.1" id="mini_uni_x1" class="form-control" value="${p.x1}"></div>
-      </div>
-      <button class="btn btn-primary btn-sm mt-1" onclick="App.calcMiniUniform()">Calcular P(X ≥ x1)</button>
-    `;
-  } else if (d.id === 'gamma') {
-    return `
-      <div class="grid-3">
-        <div><label class="form-label">α</label><input type="number" id="mini_gam_alpha" class="form-control" value="${p.alpha}"></div>
-        <div><label class="form-label">β (seg)</label><input type="number" step="0.5" id="mini_gam_beta" class="form-control" value="${p.beta}"></div>
-        <div><label class="form-label">t1 (seg)</label><input type="number" id="mini_gam_t1" class="form-control" value="${p.t1}"></div>
-      </div>
-      <button class="btn btn-primary btn-sm mt-1" onclick="App.calcMiniGamma()">Calcular P(Y ≤ t1)</button>
-    `;
-  }
-  return `
-    <button class="btn btn-secondary btn-sm" onclick="App.navigateTo('solvers')">Abrir en Solucionador Completo →</button>
-  `;
-};
-
-// Mini Calculation Handlers
-App.calcMiniBinomial = function() {
-  const n = parseInt(document.getElementById('mini_n').value);
-  const p = parseFloat(document.getElementById('mini_p').value);
-  const k = parseInt(document.getElementById('mini_k').value);
-  const res = Solvers.solveBinomial(n, p, k, 'eq');
-  const out = document.getElementById('miniRes_binomial');
-  out.style.display = 'block';
-  out.innerHTML = `<span class="badge badge-success">P(X = ${k}) = ${res.prob.toFixed(4)} (${(res.prob * 100).toFixed(2)}%) | E(X) = ${res.mu.toFixed(2)}</span>`;
-};
-
-App.calcMiniNegativeBinomial = function() {
-  const r = parseInt(document.getElementById('mini_nb_r').value);
-  const x = parseInt(document.getElementById('mini_nb_x').value);
-  const p = parseFloat(document.getElementById('mini_nb_p').value);
-  const res = Solvers.solveNegativeBinomial(r, p, x);
-  const out = document.getElementById('miniRes_negativeBinomial');
-  out.style.display = 'block';
-  out.innerHTML = `<span class="badge badge-success">P(X = ${x}) = ${res.prob.toFixed(5)} (${(res.prob * 100).toFixed(2)}%) | E(X) = ${res.mu.toFixed(2)}</span>`;
-};
-
-App.calcMiniHypergeometric = function() {
-  const N = parseInt(document.getElementById('mini_h_N').value);
-  const A = parseInt(document.getElementById('mini_h_A').value);
-  const n = parseInt(document.getElementById('mini_h_n').value);
-  const k = parseInt(document.getElementById('mini_h_k').value);
-  const res = Solvers.solveHypergeometric(N, A, n, k, 'eq');
-  const out = document.getElementById('miniRes_hypergeometric');
-  out.style.display = 'block';
-  out.innerHTML = `<span class="badge badge-success">P(X = ${k}) = ${res.prob.toFixed(4)} (${(res.prob * 100).toFixed(2)}%) | E(X) = ${res.mu.toFixed(2)}</span>`;
-};
-
-App.calcMiniPoisson = function() {
-  const lambda = parseFloat(document.getElementById('mini_poi_lambda').value);
-  const t = parseFloat(document.getElementById('mini_poi_t').value);
-  const k = parseInt(document.getElementById('mini_poi_k').value);
-  const res = Solvers.solvePoisson(lambda, t, k, 'eq');
-  const out = document.getElementById('miniRes_poisson');
-  out.style.display = 'block';
-  out.innerHTML = `<span class="badge badge-success">P(X = ${k}) = ${res.prob.toFixed(4)} (${(res.prob * 100).toFixed(2)}%) | μ = ${res.mu}</span>`;
-};
-
-App.calcMiniNormal = function() {
-  const mu = parseFloat(document.getElementById('mini_norm_mu').value);
-  const sigma = parseFloat(document.getElementById('mini_norm_sigma').value);
-  const x1 = parseFloat(document.getElementById('mini_norm_x1').value);
-  const x2 = parseFloat(document.getElementById('mini_norm_x2').value);
-  const res = Solvers.solveNormal(mu, sigma, x1, x2, 'between');
-  const out = document.getElementById('miniRes_normal');
-  out.style.display = 'block';
-  out.innerHTML = `<span class="badge badge-success">P(${x1} ≤ X ≤ ${x2}) = ${res.prob.toFixed(4)} (${(res.prob * 100).toFixed(2)}%) | z₁ = ${res.z1.toFixed(2)}, z₂ = ${res.z2.toFixed(2)}</span>`;
-};
-
-App.calcMiniUniform = function() {
-  const a = parseFloat(document.getElementById('mini_uni_a').value);
-  const b = parseFloat(document.getElementById('mini_uni_b').value);
-  const x1 = parseFloat(document.getElementById('mini_uni_x1').value);
-  const res = Solvers.solveUniformContinuous(a, b, x1, null, 'geq');
-  const out = document.getElementById('miniRes_uniformContinuous');
-  out.style.display = 'block';
-  out.innerHTML = `<span class="badge badge-success">P(X ≥ ${x1}) = ${res.prob.toFixed(4)} (${(res.prob * 100).toFixed(2)}%) | E(X) = ${res.mu.toFixed(2)}, σ = ${res.sigma.toFixed(3)}</span>`;
-};
-
-App.calcMiniGamma = function() {
-  const alpha = parseFloat(document.getElementById('mini_gam_alpha').value);
-  const beta = parseFloat(document.getElementById('mini_gam_beta').value);
-  const t1 = parseFloat(document.getElementById('mini_gam_t1').value);
-  const res = Solvers.solveGamma(alpha, beta, t1, null, 'leq');
-  const out = document.getElementById('miniRes_gamma');
-  out.style.display = 'block';
-  out.innerHTML = `<span class="badge badge-success">P(Y ≤ ${t1}) = ${res.prob.toFixed(4)} (${(res.prob * 100).toFixed(2)}%) | E(Y) = ${res.mu.toFixed(2)} seg</span>`;
-};
-
-// Make sure init() calls initDistGuide()
-const origInit = App.init;
-App.init = function() {
-  origInit.call(this);
-  this.initDistGuide();
-};
-
+// Initialize
+document.addEventListener('DOMContentLoaded', () => App.init());
