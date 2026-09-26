@@ -1214,3 +1214,305 @@ canvas {
   margin-bottom: 1rem;
 }
 
+/* ==========================================================================
+   VIEW MODE TOGGLE: SOLO CALCULADORA vs CALCULADORA + CARPETA
+   ========================================================================== */
+.view-mode-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 1.25rem;
+}
+
+.mode-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.mode-toggles {
+  display: flex;
+  gap: 0.4rem;
+  background: var(--bg-secondary);
+  padding: 3px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-color);
+}
+
+.mode-btn {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: var(--transition);
+}
+
+.mode-btn:hover {
+  color: var(--text-primary);
+}
+
+.mode-btn.active {
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 2px 10px var(--primary-glow);
+}
+
+/* ==========================================================================
+   UNJU EVALUACIÓN DE COMPETENCIA SLIDE-STYLE RESOLUTION (CARPETA)
+   ========================================================================== */
+.unju-slide-container {
+  background: linear-gradient(150deg, #10192e 0%, #0c1322 100%);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: 18px;
+  padding: 1.4rem;
+  margin-top: 1.5rem;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+  color: #f1f5f9;
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme="light"] .unju-slide-container {
+  background: linear-gradient(150deg, #f8fafc 0%, #edf2f7 100%);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #0f172a;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.unju-res-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.unju-circle-num {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #6366f1 0%, #3b82f6 100%);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1.35rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.45);
+  flex-shrink: 0;
+}
+
+.unju-res-title h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: #ffffff;
+}
+
+[data-theme="light"] .unju-res-title h3 {
+  color: #0f172a;
+}
+
+.unju-res-title span {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  display: block;
+}
+
+.unju-problem-text {
+  font-style: italic;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: #cbd5e1;
+  background: rgba(15, 23, 42, 0.5);
+  padding: 0.9rem 1.1rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 1rem;
+  border-left: 3px solid #3b82f6;
+}
+
+[data-theme="light"] .unju-problem-text {
+  background: rgba(226, 232, 240, 0.6);
+  color: #334155;
+}
+
+.unju-pills-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.unju-pill-tag {
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #93c5fd;
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 0.35rem 0.8rem;
+  border-radius: var(--radius-full);
+}
+
+[data-theme="light"] .unju-pill-tag {
+  background: #ffffff;
+  border-color: rgba(59, 130, 246, 0.25);
+  color: #2563eb;
+}
+
+.unju-formula-bar {
+  background: rgba(30, 58, 138, 0.3);
+  border: 1px solid rgba(96, 165, 250, 0.35);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #60a5fa;
+  margin-bottom: 1.25rem;
+  letter-spacing: 0.5px;
+}
+
+[data-theme="light"] .unju-formula-bar {
+  background: rgba(219, 234, 254, 0.7);
+  color: #1d4ed8;
+  border-color: rgba(96, 165, 250, 0.5);
+}
+
+.unju-inciso-card {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.15rem;
+  margin-bottom: 1rem;
+}
+
+[data-theme="light"] .unju-inciso-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.unju-inciso-title {
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: #38bdf8;
+  margin-bottom: 0.6rem;
+}
+
+[data-theme="light"] .unju-inciso-title {
+  color: #0284c7;
+}
+
+.unju-step-line {
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: #e2e8f0;
+  padding-left: 0.8rem;
+  border-left: 2px solid rgba(56, 189, 248, 0.4);
+  margin-bottom: 0.35rem;
+  font-family: inherit;
+}
+
+[data-theme="light"] .unju-step-line {
+  color: #1e293b;
+  border-left-color: rgba(2, 132, 199, 0.4);
+}
+
+.unju-result-pill {
+  display: inline-block;
+  padding: 0.45rem 1rem;
+  border-radius: var(--radius-md);
+  font-weight: 800;
+  font-size: 0.95rem;
+  margin-top: 0.5rem;
+}
+
+.unju-result-pill.green {
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+
+.unju-result-pill.pink {
+  background: rgba(244, 63, 94, 0.18);
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  color: #fb7185;
+}
+
+[data-theme="light"] .unju-result-pill.green {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+[data-theme="light"] .unju-result-pill.pink {
+  background: rgba(244, 63, 94, 0.12);
+  color: #e11d48;
+}
+
+.unju-metric-box {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.6rem;
+}
+
+.unju-big-number {
+  font-size: 3.2rem;
+  font-weight: 900;
+  line-height: 1;
+  color: #facc15;
+  text-shadow: 0 0 20px rgba(250, 204, 21, 0.35);
+}
+
+.unju-metric-text {
+  font-size: 1rem;
+  color: #cbd5e1;
+  line-height: 1.35;
+}
+
+[data-theme="light"] .unju-metric-text {
+  color: #334155;
+}
+
+.unju-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  font-size: 0.88rem;
+}
+
+.unju-table th {
+  background: rgba(30, 58, 138, 0.4);
+  color: #60a5fa;
+  padding: 0.6rem 0.8rem;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .unju-table th {
+  background: #e2e8f0;
+  color: #1e3a8a;
+}
+
+.unju-table td {
+  padding: 0.5rem 0.8rem;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="light"] .unju-table td {
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+

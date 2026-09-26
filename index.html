@@ -18,7 +18,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
   
-  <link rel="stylesheet" href="css/styles.css?v=20260926_7">
+  <link rel="stylesheet" href="css/styles.css?v=20260926_8">
   
   <script>
     // Force unregister all service workers and wipe all caches
@@ -95,6 +95,19 @@
         <button class="pill-item" data-dist="exponential" onclick="App.selectDist('exponential')">⚡ Exponencial Exp(β)</button>
         <button class="pill-item" data-dist="contingency" onclick="App.selectDist('contingency')">📊 Tablas de Contingencia</button>
         <button class="pill-item" data-dist="bayes" onclick="App.selectDist('bayes')">🌳 Teorema de Bayes</button>
+      </div>
+
+      <!-- View Mode Selector: Solo Calculadora vs Calculadora + Carpeta -->
+      <div class="view-mode-bar">
+        <div class="mode-label">👁️ Modo de pantalla:</div>
+        <div class="mode-toggles">
+          <button class="mode-btn active" id="btnModeBoth" onclick="App.setViewMode('both')">
+            <span>📝</span> <span>Calculadora + Carpeta</span>
+          </button>
+          <button class="mode-btn" id="btnModeCalcOnly" onclick="App.setViewMode('calcOnly')">
+            <span>🧮</span> <span>Solo Calculadora</span>
+          </button>
+        </div>
       </div>
 
       <!-- Dynamic Active Distribution Card -->
@@ -223,9 +236,9 @@
   </div>
 
   <!-- Application Scripts with cache-busting -->
-  <script src="js/math-utils.js?v=20260926_7"></script>
-  <script src="js/solvers.js?v=20260926_7"></script>
-  <script src="js/exam-data.js?v=20260926_7"></script>
-  <script src="js/app.js?v=20260926_7"></script>
+  <script src="js/math-utils.js?v=20260926_8"></script>
+  <script src="js/solvers.js?v=20260926_8"></script>
+  <script src="js/exam-data.js?v=20260926_8"></script>
+  <script src="js/app.js?v=20260926_8"></script>
 </body>
 </html>

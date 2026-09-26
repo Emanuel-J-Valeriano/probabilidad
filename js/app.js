@@ -8,15 +8,34 @@ const App = {
   currentDist: 'binomial',
   currentExam: 'parcial-2025-a',
   cameraStream: null,
+  viewMode: localStorage.getItem('prob_view_mode') || 'both', // 'both' | 'calcOnly'
 
   init() {
     this.initTheme();
     this.initPWA();
+    this.updateViewModeUI();
     this.selectDist('binomial');
     this.renderExams();
     this.bindEvents();
     this.renderMath();
     console.log("App Probabilidad 2025 initialized.");
+  },
+
+  setViewMode(mode) {
+    this.viewMode = mode;
+    localStorage.setItem('prob_view_mode', mode);
+    this.updateViewModeUI();
+    const folder = document.getElementById('resolutionFolderSection');
+    const banner = document.getElementById('calcOnlyBanner');
+    if (folder) folder.style.display = mode === 'calcOnly' ? 'none' : 'block';
+    if (banner) banner.style.display = mode === 'calcOnly' ? 'block' : 'none';
+  },
+
+  updateViewModeUI() {
+    const btnBoth = document.getElementById('btnModeBoth');
+    const btnCalc = document.getElementById('btnModeCalcOnly');
+    if (btnBoth) btnBoth.classList.toggle('active', this.viewMode === 'both');
+    if (btnCalc) btnCalc.classList.toggle('active', this.viewMode === 'calcOnly');
   },
 
   initTheme() {
@@ -185,10 +204,10 @@ const App = {
 
         <!-- Calculadora Interactiva -->
         <div class="calc-mini-box">
-          <h4 style="color:var(--primary); margin-bottom:0.6rem;">🧮 Calculadora de Probabilidad:</h4>
+          <h4 style="color:var(--primary); margin-bottom:0.6rem;">🧮 Calculadora de Probabilidad Binomial:</h4>
           <div class="grid-4">
-            <div><label class="form-label">Ensayos (n)</label><input type="number" id="calc_bin_n" class="form-control" value="16" min="1"></div>
-            <div><label class="form-label">Prob. Éxito (p)</label><input type="number" step="0.05" id="calc_bin_p" class="form-control" value="0.30" min="0" max="1"></div>
+            <div><label class="form-label">Ensayos (n)</label><input type="number" id="calc_bin_n" class="form-control" value="5" min="1"></div>
+            <div><label class="form-label">Prob. Éxito (p)</label><input type="number" step="0.05" id="calc_bin_p" class="form-control" value="0.20" min="0" max="1"></div>
             <div><label class="form-label">Operación</label>
               <select id="calc_bin_op" class="form-control" onchange="App.toggleBinomialK2()">
                 <option value="eq">P(X = k)</option>
@@ -197,49 +216,88 @@ const App = {
                 <option value="between">P(k1 ≤ X ≤ k2)</option>
               </select>
             </div>
-            <div><label class="form-label">Valor k</label><input type="number" id="calc_bin_k" class="form-control" value="4"></div>
+            <div><label class="form-label">Valor k</label><input type="number" id="calc_bin_k" class="form-control" value="1"></div>
           </div>
           <div id="calc_bin_k2_row" class="grid-2 mt-1" style="display:none;">
-            <div><label class="form-label">Límite k2</label><input type="number" id="calc_bin_k2" class="form-control" value="10"></div>
+            <div><label class="form-label">Límite k2</label><input type="number" id="calc_bin_k2" class="form-control" value="4"></div>
           </div>
           <button class="btn btn-primary mt-2" onclick="App.runCalcBinomial()">⚡ Calcular Probabilidad</button>
           <div id="calcRes_binomial" class="result-card mt-2" style="display:none;"></div>
         </div>
 
-        <!-- Ejemplo Mínimo del Parcial 2025 -->
-        <div class="formula-box highlight mt-2">
-          <strong style="color:var(--secondary);">📌 Ejemplo Típico del Parcial 2025 V4 (Temario B, Ej 2):</strong>
-          <p style="margin-top:0.3rem;"><em>"El 30% de los alumnos de una facultad se levanta temprano para estudiar (p = 0.30). Se encuesta a 16 alumnos (n = 16). Calcule la probabilidad de que exactamente 4 se levanten temprano, la probabilidad de que más de 8 lo hagan, y entre 6 y 10."</em></p>
+        <div id="calcOnlyBanner" class="alert-box mt-2" style="display:${this.viewMode === 'calcOnly' ? 'block' : 'none'}; cursor:pointer;" onclick="App.setViewMode('both')">
+          💡 <strong>Modo Solo Calculadora activo:</strong> El desarrollo de la carpeta está oculto para agilizar cálculos. Toca aquí o en "📝 Calculadora + Carpeta" para verlo.
         </div>
 
-        <!-- Qué poner en la hoja del parcial -->
-        <div class="mt-2">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
-            <h4 style="color:#34d399; margin:0;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
-            <button class="copy-btn" onclick="App.copySheetText('sheet_binomial', this)">📋 Copiar para mi Carpeta</button>
-          </div>
-          <div class="sheet-template" id="sheet_binomial">
-            <div class="sheet-step"><span class="step-num">1</span> <strong>Definición formal de la Variable:</strong><br>
-            <em>Sea X: número de alumnos que se levantan temprano en una muestra de n = 16 alumnos encuestados. X es una variable aleatoria discreta.</em></div>
+        <div id="resolutionFolderSection" class="resolution-folder-view" style="display:${this.viewMode === 'calcOnly' ? 'none' : 'block'};">
+          <div class="unju-slide-container" id="sheet_binomial">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+              <div class="unju-res-header" style="margin:0;">
+                <div class="unju-circle-num">7</div>
+                <div class="unju-res-title">
+                  <h3>Semáforo en la esquina</h3>
+                  <span>Distribución Binomial • Evaluación de Competencia UNJu</span>
+                </div>
+              </div>
+              <button class="copy-btn" onclick="App.copySheetText('sheet_binomial', this)">📋 Copiar para mi Carpeta</button>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">2</span> <strong>Modelo y Parámetros:</strong><br>
-            X ~ B(n = 16, p = 0.30) con q = 1 - p = 0.70</div>
+            <div class="unju-problem-text">
+              Una persona pasa todas las mañanas por una esquina donde el semáforo está en verde el 20% de las veces. Cada mañana es un ensayo independiente. Se consideran 5 mañanas consecutivas.
+            </div>
 
-            <div class="sheet-step"><span class="step-num">3</span> <strong>Función de Probabilidad Puntual:</strong><br>
-            P(X = x) = C(n, x) · pˣ · (1 - p)ⁿ⁻ˣ    para x = 0, 1, 2, ..., n</div>
+            <div class="unju-pills-row">
+              <span class="unju-pill-tag">X = Nº de mañanas en verde</span>
+              <span class="unju-pill-tag">n = 5</span>
+              <span class="unju-pill-tag">p = 0.2</span>
+              <span class="unju-pill-tag">X ~ Binomial(5, 0.2)</span>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">4</span> <strong>Sustitución Numérica para exactamente 4 alumnos P(X = 4):</strong><br>
-            P(X = 4) = C(16, 4) · (0.30)⁴ · (0.70)¹² = 1820 · (0.0081) · (0.01384) = 0.2040 (20.40%)</div>
+            <div class="unju-formula-bar">
+              P(X = k) = C(n, k) · p^k · (1 - p)^(n - k)
+            </div>
 
-            <div class="sheet-step"><span class="step-num">5</span> <strong>Sustitución para más de 8 alumnos P(X > 8):</strong><br>
-            P(X > 8) = 1 - P(X ≤ 8) = 1 - 0.9743 = 0.0257 (2.57%)</div>
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">a) P(en verde por lo menos 4 días) = P(X ≥ 4)</div>
+              <div class="unju-step-line">P(X ≥ 4) = P(X = 4) + P(X = 5)</div>
+              <div class="unju-step-line">P(X = 4) = C(5, 4) · (0.2)⁴ · (0.8)¹ = 5 · 0.0016 · 0.8 = 0.0064</div>
+              <div class="unju-step-line">P(X = 5) = C(5, 5) · (0.2)⁵ · (0.8)⁰ = 0.00032</div>
+              <div class="unju-result-pill green">P(X ≥ 4) = 0.00672 ≈ 0.67%</div>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">6</span> <strong>Esperanza y Varianza:</strong><br>
-            E(X) = n · p = 16 × 0.30 = 4.8 alumnos<br>
-            Var(X) = n · p · q = 16 × 0.30 × 0.70 = 3.36 ⟹ σ = √3.36 ≈ 1.833</div>
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">b) P(en verde exactamente 1 día) = P(X = 1)</div>
+              <div class="unju-step-line">P(X = 1) = C(5, 1) · (0.2)¹ · (0.8)⁴ = 5 · 0.2 · 0.4096</div>
+              <div class="unju-result-pill green">P(X = 1) = 0.4096 ≈ 40.96%</div>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">7</span> <strong>Conclusión redactada:</strong><br>
-            <em>Respuesta: La probabilidad de que exactamente 4 alumnos se levanten temprano es del 20.40%, y el valor esperado es de 4.8 alumnos.</em></div>
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">c) P(en verde exactamente 2 días) = P(X = 2)</div>
+              <div class="unju-step-line">P(X = 2) = C(5, 2) · (0.2)² · (0.8)³ = 10 · 0.04 · 0.512</div>
+              <div class="unju-result-pill green">P(X = 2) = 0.2048 ≈ 20.48%</div>
+            </div>
+
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">d) Número esperado de mañanas en verde</div>
+              <div class="unju-step-line">E(X) = n · p = 5 · 0.2</div>
+              <div class="unju-metric-box">
+                <span class="unju-big-number">1</span>
+                <span class="unju-metric-text">mañana en verde, en promedio, de las 5 mañanas.</span>
+              </div>
+            </div>
+
+            <!-- Segundo Ejemplo: Parcial 2025 V4 Alumnos Temprano -->
+            <details class="mt-2" style="background:rgba(15,23,42,0.4); border-radius:12px; padding:0.8rem 1rem; border:1px solid rgba(255,255,255,0.06);">
+              <summary style="font-weight:700; color:#38bdf8; cursor:pointer;">
+                📖 Ver También: Ejercicio 2 Parcial 2025 V4 (Alumnos Temprano n = 16, p = 0.30)
+              </summary>
+              <div style="margin-top:0.8rem;">
+                <div class="unju-step-line"><strong>Variable:</strong> Sea X: número de alumnos que se levantan temprano en muestra n = 16. X ~ B(16, 0.30).</div>
+                <div class="unju-step-line"><strong>P(X = 4):</strong> C(16, 4) · (0.30)⁴ · (0.70)¹² = 1820 · (0.0081) · (0.01384) = <strong>0.2040 (20.40%)</strong></div>
+                <div class="unju-step-line"><strong>P(X > 8):</strong> 1 - P(X ≤ 8) = 1 - 0.9743 = <strong>0.0257 (2.57%)</strong></div>
+                <div class="unju-step-line"><strong>Esperanza:</strong> E(X) = 16 × 0.30 = <strong>4.8 alumnos</strong> (Var = 3.36, σ = 1.833)</div>
+              </div>
+            </details>
           </div>
         </div>
       `;
@@ -267,38 +325,54 @@ const App = {
           <div id="calcRes_negativeBinomial" class="result-card mt-2" style="display:none;"></div>
         </div>
 
-        <!-- Ejemplo Mínimo del Parcial 2025 -->
-        <div class="formula-box highlight mt-2">
-          <strong style="color:var(--secondary);">📌 Ejemplo Exacto del Parcial 2025 (Temario A, Ej 3a):</strong>
-          <p style="margin-top:0.3rem;"><em>"El 80% de los alumnos cursó la materia este año (p = 0.80). Si se entrevista alumnos que se presentan a rendir en diciembre, ¿cuál es la probabilidad de que el sexto alumno entrevistado (x = 6) sea el cuarto (r = 4) que cursó este año?"</em></p>
+        <div id="calcOnlyBanner" class="alert-box mt-2" style="display:${this.viewMode === 'calcOnly' ? 'block' : 'none'}; cursor:pointer;" onclick="App.setViewMode('both')">
+          💡 <strong>Modo Solo Calculadora activo:</strong> El desarrollo de la carpeta está oculto para agilizar cálculos. Toca aquí o en "📝 Calculadora + Carpeta" para verlo.
         </div>
 
-        <!-- Qué poner en la hoja del parcial -->
-        <div class="mt-2">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
-            <h4 style="color:#34d399; margin:0;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
-            <button class="copy-btn" onclick="App.copySheetText('sheet_negativeBinomial', this)">📋 Copiar para mi Carpeta</button>
-          </div>
-          <div class="sheet-template" id="sheet_negativeBinomial">
-            <div class="sheet-step"><span class="step-num">1</span> <strong>Definición formal de la Variable:</strong><br>
-            <em>Sea X: número total de alumnos entrevistados hasta encontrar r = 4 alumnos que cursaron la materia este año. X es una variable aleatoria discreta.</em></div>
+        <div id="resolutionFolderSection" class="resolution-folder-view" style="display:${this.viewMode === 'calcOnly' ? 'none' : 'block'};">
+          <div class="unju-slide-container" id="sheet_negativeBinomial">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+              <div class="unju-res-header" style="margin:0;">
+                <div class="unju-circle-num">3</div>
+                <div class="unju-res-title">
+                  <h3>Examen en Diciembre</h3>
+                  <span>Distribución Binomial Negativa (Pascal) • Parcial 2025 UNJu</span>
+                </div>
+              </div>
+              <button class="copy-btn" onclick="App.copySheetText('sheet_negativeBinomial', this)">📋 Copiar para mi Carpeta</button>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">2</span> <strong>Identificación del Modelo y Parámetros:</strong><br>
-            X ~ BN(r = 4, p = 0.80)  (Distribución Binomial Negativa o de Pascal).</div>
+            <div class="unju-problem-text">
+              El 80% de los alumnos cursó la materia este año (p = 0.80). Si se entrevista alumnos que se presentan a rendir en diciembre, ¿cuál es la probabilidad de que el 6° alumno entrevistado sea el 4° que cursó este año?
+            </div>
 
-            <div class="sheet-step"><span class="step-num">3</span> <strong>Función de Probabilidad Puntual:</strong><br>
-            P(X = x) = C(x - 1, r - 1) · p^r · (1 - p)^(x - r)    para x = r, r+1, r+2, ...</div>
+            <div class="unju-pills-row">
+              <span class="unju-pill-tag">r = 4 éxitos deseados</span>
+              <span class="unju-pill-tag">p = 0.80</span>
+              <span class="unju-pill-tag">x = 6 ensayos</span>
+              <span class="unju-pill-tag">X ~ BN(r = 4, p = 0.80)</span>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">4</span> <strong>Sustitución para x = 6 y r = 4:</strong><br>
-            P(X = 6) = C(6 - 1, 4 - 1) · (0.80)⁴ · (0.20)^(6 - 4) = C(5, 3) · (0.80)⁴ · (0.20)²<br>
-            C(5, 3) = (5 · 4 · 3) / (3 · 2 · 1) = 10<br>
-            P(X = 6) = 10 · 0.4096 · 0.04 = 0.16384 (16.38%)</div>
+            <div class="unju-formula-bar">
+              P(X = x) = C(x - 1, r - 1) · p^r · (1 - p)^(x - r)
+            </div>
 
-            <div class="sheet-step"><span class="step-num">5</span> <strong>Esperanza Matemática:</strong><br>
-            E(X) = r / p = 4 / 0.80 = 5 alumnos a entrevistar</div>
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">a) P(el 6° alumno sea el 4° que cursó) = P(X = 6)</div>
+              <div class="unju-step-line">P(X = 6) = C(6 - 1, 4 - 1) · (0.80)⁴ · (0.20)⁶⁻⁴ = C(5, 3) · (0.80)⁴ · (0.20)²</div>
+              <div class="unju-step-line">C(5, 3) = (5 · 4 · 3) / (3 · 2 · 1) = 10</div>
+              <div class="unju-step-line">P(X = 6) = 10 · 0.4096 · 0.04 = 0.16384</div>
+              <div class="unju-result-pill green">P(X = 6) = 0.1638 ≈ 16.38%</div>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">6</span> <strong>Conclusión redactada:</strong><br>
-            <em>Respuesta: La probabilidad de que el sexto alumno entrevistado sea el cuarto que cursó este año es del 16.38%.</em></div>
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">b) Número esperado de alumnos a entrevistar</div>
+              <div class="unju-step-line">E(X) = r / p = 4 / 0.80</div>
+              <div class="unju-metric-box">
+                <span class="unju-big-number">5</span>
+                <span class="unju-metric-text">alumnos entrevistados en promedio para encontrar 4 que hayan cursado.</span>
+              </div>
+            </div>
           </div>
         </div>
       `;
@@ -312,54 +386,96 @@ const App = {
           </div>
           <span class="badge badge-success" style="font-size:0.95rem; font-family:monospace;">X ~ H(N, A, n)</span>
         </div>
-        <p class="hero-desc">Muestreo <strong>SIN REPOSICIÓN</strong> de tamaño n en una población finita N que contiene A éxitos.</p>
+        <p class="hero-desc">Muestreo <strong>SIN REPOSICIÓN</strong> de tamaño n en una población finita N que contiene K éxitos.</p>
 
         <!-- Calculadora -->
         <div class="calc-mini-box">
           <h4 style="color:var(--primary); margin-bottom:0.6rem;">🧮 Calculadora Hipergeométrica:</h4>
           <div class="grid-4">
-            <div><label class="form-label">Población (N)</label><input type="number" id="calc_hyp_N" class="form-control" value="47"></div>
-            <div><label class="form-label">Éxitos Totales (A)</label><input type="number" id="calc_hyp_A" class="form-control" value="23"></div>
-            <div><label class="form-label">Muestra (n)</label><input type="number" id="calc_hyp_n" class="form-control" value="7"></div>
-            <div><label class="form-label">Éxitos Muestra (k)</label><input type="number" id="calc_hyp_k" class="form-control" value="2"></div>
+            <div><label class="form-label">Población (N)</label><input type="number" id="calc_hyp_N" class="form-control" value="12"></div>
+            <div><label class="form-label">Éxitos Totales (K)</label><input type="number" id="calc_hyp_A" class="form-control" value="7"></div>
+            <div><label class="form-label">Muestra (n)</label><input type="number" id="calc_hyp_n" class="form-control" value="6"></div>
+            <div><label class="form-label">Éxitos Muestra (k)</label><input type="number" id="calc_hyp_k" class="form-control" value="5"></div>
           </div>
           <button class="btn btn-primary mt-2" onclick="App.runCalcHypergeometric()">⚡ Calcular Probabilidad</button>
           <div id="calcRes_hypergeometric" class="result-card mt-2" style="display:none;"></div>
         </div>
 
-        <!-- Ejemplo Mínimo del Parcial 2025 -->
-        <div class="formula-box highlight mt-2">
-          <strong style="color:var(--secondary);">📌 Ejemplo Exacto del Parcial 2025 V4 (Temario B, Ej 3):</strong>
-          <p style="margin-top:0.3rem;"><em>"En un criadero hay 47 peces, 23 de los cuales son surubíes. Un pescador captura 7 peces al azar sin reemplazo. a) ¿P(exactamente 2 surubíes)? b) ¿P(por lo menos 2)? c) ¿Número esperado de surubíes?"</em></p>
+        <div id="calcOnlyBanner" class="alert-box mt-2" style="display:${this.viewMode === 'calcOnly' ? 'block' : 'none'}; cursor:pointer;" onclick="App.setViewMode('both')">
+          💡 <strong>Modo Solo Calculadora activo:</strong> El desarrollo de la carpeta está oculto para agilizar cálculos. Toca aquí o en "📝 Calculadora + Carpeta" para verlo.
         </div>
 
-        <!-- Qué poner en la hoja del parcial -->
-        <div class="mt-2">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
-            <h4 style="color:#34d399; margin:0;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
-            <button class="copy-btn" onclick="App.copySheetText('sheet_hypergeometric', this)">📋 Copiar para mi Carpeta</button>
-          </div>
-          <div class="sheet-template" id="sheet_hypergeometric">
-            <div class="sheet-step"><span class="step-num">1</span> <strong>Definición formal de la Variable:</strong><br>
-            <em>Sea X: número de surubíes obtenidos en la muestra de tamaño n = 7 capturados sin reemplazo de una población total N = 47. X es una V.A. discreta.</em></div>
+        <div id="resolutionFolderSection" class="resolution-folder-view" style="display:${this.viewMode === 'calcOnly' ? 'none' : 'block'};">
+          <div class="unju-slide-container" id="sheet_hypergeometric">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+              <div class="unju-res-header" style="margin:0;">
+                <div class="unju-circle-num">11</div>
+                <div class="unju-res-title">
+                  <h3>Refrigeradores defectuosos</h3>
+                  <span>Distribución Hipergeométrica • Evaluación de Competencia UNJu</span>
+                </div>
+              </div>
+              <button class="copy-btn" onclick="App.copySheetText('sheet_hypergeometric', this)">📋 Copiar para mi Carpeta</button>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">2</span> <strong>Modelo y Parámetros:</strong><br>
-            X ~ H(N = 47, A = 23, n = 7) con N - A = 24 peces que no son surubíes.</div>
+            <div class="unju-problem-text">
+              12 refrigeradores fueron devueltos: 7 tienen compresor defectuoso y 5 tienen problemas menos serios. Se seleccionan al azar 6 refrigeradores (sin reemplazo) para examinar.
+            </div>
 
-            <div class="sheet-step"><span class="step-num">3</span> <strong>Función de Probabilidad Hipergeométrica:</strong><br>
-            P(X = x) = [C(A, x) · C(N - A, n - x)] / C(N, n)</div>
+            <div class="unju-pills-row">
+              <span class="unju-pill-tag">N = 12</span>
+              <span class="unju-pill-tag">K = 7 (defectuosos)</span>
+              <span class="unju-pill-tag">n = 6 (muestra)</span>
+              <span class="unju-pill-tag">X ~ Hipergeométrica(12, 7, 6)</span>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">4</span> <strong>Sustitución para exactamente 2 surubíes P(X = 2):</strong><br>
-            P(X = 2) = [C(23, 2) · C(24, 5)] / C(47, 7) = [253 · 42504] / 62891499 = 10753512 / 62891499 = 0.1710 (17.10%)</div>
+            <div class="unju-formula-bar">
+              P(X = k) = [ C(K, k) · C(N - K, n - k) ] / C(N, n) &nbsp;•&nbsp; C(12, 6) = 924
+            </div>
 
-            <div class="sheet-step"><span class="step-num">5</span> <strong>Por lo menos 2 surubíes P(X ≥ 2):</strong><br>
-            P(X ≥ 2) = 1 - P(X = 0) - P(X = 1) = 1 - (0.0055 + 0.0492) = 0.9453 (94.53%)</div>
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">a) P(exactamente 5 con compresor defectuoso) = P(X = 5)</div>
+              <div class="unju-step-line">P(X = 5) = [ C(7, 5) · C(5, 1) ] / C(12, 6) = (21 · 5) / 924</div>
+              <div class="unju-result-pill pink">P(X = 5) ≈ 0.1136 ≈ 11.36%</div>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">6</span> <strong>Número esperado de surubíes:</strong><br>
-            E(X) = n · (A / N) = 7 · (23 / 47) = 161 / 47 = 3.4255 ≈ 3.43 surubíes</div>
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">b) P(por lo menos 4 con compresor defectuoso) = P(X ≥ 4)</div>
+              <table class="unju-table">
+                <thead>
+                  <tr><th>k</th><th>C(7, k)</th><th>C(5, 6 - k)</th><th>Producto</th><th>P(X = k)</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>4</td><td>35</td><td>10</td><td>350</td><td>0.3788</td></tr>
+                  <tr><td>5</td><td>21</td><td>5</td><td>105</td><td>0.1136</td></tr>
+                  <tr><td>6</td><td>7</td><td>1</td><td>7</td><td>0.0076</td></tr>
+                </tbody>
+              </table>
+              <div class="unju-step-line">P(X ≥ 4) = (350 + 105 + 7) / 924 = 462 / 924</div>
+              <div class="unju-result-pill pink">P(X ≥ 4) = 0.5 = 50%</div>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">7</span> <strong>Conclusión:</strong><br>
-            <em>Respuesta: La probabilidad de capturar exactamente 2 surubíes es del 17.10%, y el número esperado es de aproximadamente 3.43 surubíes.</em></div>
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">c) Número esperado de refrigeradores defectuosos</div>
+              <div class="unju-step-line">E(X) = n · (K / N) = 6 · (7 / 12)</div>
+              <div class="unju-metric-box">
+                <span class="unju-big-number">4</span>
+                <span class="unju-metric-text">refrigeradores con compresor defectuoso, en promedio, de los 6 examinados.</span>
+              </div>
+            </div>
+
+            <!-- Segundo Ejemplo: Peces Surubíes -->
+            <details class="mt-2" style="background:rgba(15,23,42,0.4); border-radius:12px; padding:0.8rem 1rem; border:1px solid rgba(255,255,255,0.06);">
+              <summary style="font-weight:700; color:#38bdf8; cursor:pointer;">
+                📖 Ver También: Ejercicio 3 Parcial 2025 V4 (Peces Surubíes N = 47, A = 23, n = 7)
+              </summary>
+              <div style="margin-top:0.8rem;">
+                <div class="unju-step-line"><strong>Variable:</strong> Sea X: número de surubíes en muestra n = 7 sin reemplazo. X ~ H(47, 23, 7).</div>
+                <div class="unju-step-line"><strong>P(X = 2):</strong> [ C(23, 2) · C(24, 5) ] / C(47, 7) = (253 × 42504) / 62891499 = <strong>0.1710 (17.10%)</strong></div>
+                <div class="unju-step-line"><strong>P(X ≥ 2):</strong> 1 - P(0) - P(1) = 1 - (0.0055 + 0.0492) = <strong>0.9453 (94.53%)</strong></div>
+                <div class="unju-step-line"><strong>Esperado:</strong> E(X) = 7 · (23/47) = <strong>3.43 surubíes</strong></div>
+              </div>
+            </details>
           </div>
         </div>
       `;
@@ -373,7 +489,7 @@ const App = {
           </div>
           <span class="badge badge-success" style="font-size:0.95rem; font-family:monospace;">X ~ Poisson(μ = λ · t)</span>
         </div>
-        <p class="hero-desc">Número de eventos en un intervalo de tiempo continuo t con tasa media constante λ.</p>
+        <p class="hero-desc">Número de eventos en un intervalo continuo t con tasa constante λ.</p>
 
         <!-- Calculadora -->
         <div class="calc-mini-box">
@@ -394,37 +510,58 @@ const App = {
           <div id="calcRes_poisson" class="result-card mt-2" style="display:none;"></div>
         </div>
 
-        <!-- Ejemplo Mínimo del Parcial 2025 -->
-        <div class="formula-box highlight mt-2">
-          <strong style="color:var(--secondary);">📌 Ejemplo Exacto del Parcial 2025 (Temario A, Ej 4):</strong>
-          <p style="margin-top:0.3rem;"><em>"Una heladería recibe en promedio 5 clientes por minuto (λ = 5). a) ¿P(en 1 min lleguen 7 clientes)? b) ¿En 30 segundos lleguen entre 3 y 7 clientes?"</em></p>
+        <div id="calcOnlyBanner" class="alert-box mt-2" style="display:${this.viewMode === 'calcOnly' ? 'block' : 'none'}; cursor:pointer;" onclick="App.setViewMode('both')">
+          💡 <strong>Modo Solo Calculadora activo:</strong> El desarrollo de la carpeta está oculto para agilizar cálculos. Toca aquí o en "📝 Calculadora + Carpeta" para verlo.
         </div>
 
-        <!-- Qué poner en la hoja del parcial -->
-        <div class="mt-2">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
-            <h4 style="color:#34d399; margin:0;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
-            <button class="copy-btn" onclick="App.copySheetText('sheet_poisson', this)">📋 Copiar para mi Carpeta</button>
-          </div>
-          <div class="sheet-template" id="sheet_poisson">
-            <div class="sheet-step"><span class="step-num">1</span> <strong>Definición de la Variable:</strong><br>
-            <em>Sea X: número de clientes que llegan a la heladería en el intervalo considerado. X es una V.A. discreta.</em></div>
+        <div id="resolutionFolderSection" class="resolution-folder-view" style="display:${this.viewMode === 'calcOnly' ? 'none' : 'block'};">
+          <div class="unju-slide-container" id="sheet_poisson">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+              <div class="unju-res-header" style="margin:0;">
+                <div class="unju-circle-num">4</div>
+                <div class="unju-res-title">
+                  <h3>Heladería en Shopping</h3>
+                  <span>Distribución de Poisson • Parcial 2025 UNJu</span>
+                </div>
+              </div>
+              <button class="copy-btn" onclick="App.copySheetText('sheet_poisson', this)">📋 Copiar para mi Carpeta</button>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">2</span> <strong>Parámetro para 1 minuto (t = 1 min):</strong><br>
-            μ = λ · t = 5 × 1 = 5 ⟹ X ~ Poisson(μ = 5)</div>
+            <div class="unju-problem-text">
+              Una reconocida heladería ubicada en un shopping recibe en promedio 5 clientes por minuto (λ = 5). a) ¿P(en 1 min lleguen 7 clientes)? b) ¿En 30 segundos lleguen entre 3 y 7 clientes?
+            </div>
 
-            <div class="sheet-step"><span class="step-num">3</span> <strong>Función de Probabilidad Puntual:</strong><br>
-            P(X = x) = [e^(-μ) · μ^x] / x!    para x = 0, 1, 2, ...</div>
+            <div class="unju-pills-row">
+              <span class="unju-pill-tag">X = Clientes por minuto</span>
+              <span class="unju-pill-tag">λ = 5 clientes/min</span>
+              <span class="unju-pill-tag">t = 1 min</span>
+              <span class="unju-pill-tag">X ~ Poisson(μ = 5)</span>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">4</span> <strong>Sustitución para x = 7 clientes en 1 minuto:</strong><br>
-            P(X = 7) = [e^(-5) · 5^7] / 7! = [0.0067379 · 78125] / 5040 = 0.1044 (10.44%)</div>
+            <div class="unju-formula-bar">
+              P(X = x) = [ e^(-μ) · μ^x ] / x!
+            </div>
 
-            <div class="sheet-step"><span class="step-num">5</span> <strong>Cambio de Escala para 30 segundos (t' = 0.5 min):</strong><br>
-            μ' = λ · t' = 5 × 0.5 = 2.5 clientes<br>
-            P(3 ≤ X ≤ 7) = P(3) + P(4) + P(5) + P(6) + P(7) = 0.4520 (45.20%)</div>
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">a) P(7 clientes en 1 minuto) = P(X = 7)</div>
+              <div class="unju-step-line">P(X = 7) = [ e⁻⁵ · 5⁷ ] / 7! = [ 0.0067379 · 78125 ] / 5040</div>
+              <div class="unju-result-pill green">P(X = 7) = 0.1044 ≈ 10.44%</div>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">6</span> <strong>Esperanza y Varianza:</strong><br>
-            E(X) = μ = 5 clientes, Var(X) = μ = 5 (σ = √5 ≈ 2.236)</div>
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">b) En 30 segundos (t = 0.5 min ⟹ μ = 2.5 clientes): P(3 ≤ X ≤ 7)</div>
+              <div class="unju-step-line">P(3 ≤ X ≤ 7) = P(3) + P(4) + P(5) + P(6) + P(7)</div>
+              <div class="unju-result-pill green">P(3 ≤ X ≤ 7) = 0.4520 ≈ 45.20%</div>
+            </div>
+
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">c) Esperanza y Desvío Estándar</div>
+              <div class="unju-step-line">E(X) = μ = 5 clientes &nbsp;|&nbsp; Var(X) = 5 ⟹ σ = √5 ≈ 2.236 clientes</div>
+              <div class="unju-metric-box">
+                <span class="unju-big-number">5</span>
+                <span class="unju-metric-text">clientes en promedio por minuto en la heladería.</span>
+              </div>
+            </div>
           </div>
         </div>
       `;
@@ -456,42 +593,59 @@ const App = {
           <div id="calcRes_normal" class="result-card mt-2" style="display:none;"></div>
         </div>
 
-        <!-- Ejemplo Mínimo del Parcial 2025 -->
-        <div class="formula-box highlight mt-2">
-          <strong style="color:var(--secondary);">📌 Ejemplo Exacto del Parcial 2025 (Temario A, Ej 5):</strong>
-          <p style="margin-top:0.3rem;"><em>"Una planta industrial capacita operarios en CEP. El tiempo medio estimado del curso es μ = 8.2 hs con desvío estándar σ = 1.1 hs. a) ¿P(el curso dure entre 7 y 10 hs)? b) Si P > 75%, ¿se recomienda contratar servicio extra? c) De 20 encuentros al año, ¿cuántos durarán entre 7 y 10 hs?"</em></p>
+        <div id="calcOnlyBanner" class="alert-box mt-2" style="display:${this.viewMode === 'calcOnly' ? 'block' : 'none'}; cursor:pointer;" onclick="App.setViewMode('both')">
+          💡 <strong>Modo Solo Calculadora activo:</strong> El desarrollo de la carpeta está oculto para agilizar cálculos. Toca aquí o en "📝 Calculadora + Carpeta" para verlo.
         </div>
 
-        <!-- Qué poner en la hoja del parcial -->
-        <div class="mt-2">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
-            <h4 style="color:#34d399; margin:0;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
-            <button class="copy-btn" onclick="App.copySheetText('sheet_normal', this)">📋 Copiar para mi Carpeta</button>
-          </div>
-          <div class="sheet-template" id="sheet_normal">
-            <div class="sheet-step"><span class="step-num">1</span> <strong>Definición formal de la Variable:</strong><br>
-            <em>Sea X: duración en horas del curso de capacitación de operarios. X es una variable aleatoria continua.</em></div>
+        <div id="resolutionFolderSection" class="resolution-folder-view" style="display:${this.viewMode === 'calcOnly' ? 'none' : 'block'};">
+          <div class="unju-slide-container" id="sheet_normal">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+              <div class="unju-res-header" style="margin:0;">
+                <div class="unju-circle-num">5</div>
+                <div class="unju-res-title">
+                  <h3>Capacitación de Operarios (CEP)</h3>
+                  <span>Distribución Normal • Parcial 2025 UNJu</span>
+                </div>
+              </div>
+              <button class="copy-btn" onclick="App.copySheetText('sheet_normal', this)">📋 Copiar para mi Carpeta</button>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">2</span> <strong>Modelo y Parámetros:</strong><br>
-            X ~ N(μ = 8.2, σ = 1.1) con varianza σ² = 1.21 hs².</div>
+            <div class="unju-problem-text">
+              Una planta industrial capacita operarios en CEP. El tiempo medio estimado del curso es μ = 8.2 hs con desvío estándar σ = 1.1 hs. a) ¿P(curso dure entre 7 y 10 hs)? b) Si P > 75%, ¿se recomienda contratar servicio extra? c) De 20 encuentros al año, ¿cuántos durarán entre 7 y 10 hs?
+            </div>
 
-            <div class="sheet-step"><span class="step-num">3</span> <strong>Estandarización a la Normal Estándar Z ~ N(0, 1):</strong><br>
-            Z = (X - μ) / σ = (X - 8.2) / 1.1</div>
+            <div class="unju-pills-row">
+              <span class="unju-pill-tag">μ = 8.2 hs</span>
+              <span class="unju-pill-tag">σ = 1.1 hs</span>
+              <span class="unju-pill-tag">σ² = 1.21 hs²</span>
+              <span class="unju-pill-tag">X ~ N(8.2, 1.21)</span>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">4</span> <strong>Estandarizar Límites x₁ = 7 y x₂ = 10:</strong><br>
-            z₁ = (7 - 8.2) / 1.1 = -1.2 / 1.1 = -1.09<br>
-            z₂ = (10 - 8.2) / 1.1 = 1.8 / 1.1 = 1.64</div>
+            <div class="unju-formula-bar">
+              Z = (X - μ) / σ ~ N(0, 1) &nbsp;•&nbsp; P(a ≤ X ≤ b) = Φ(z₂) - Φ(z₁)
+            </div>
 
-            <div class="sheet-step"><span class="step-num">5</span> <strong>Cálculo de Probabilidad por Tabla Normal Φ(z):</strong><br>
-            P(7 ≤ X ≤ 10) = P(-1.09 ≤ Z ≤ 1.64) = Φ(1.64) - Φ(-1.09)<br>
-            Por simetría: Φ(-1.09) = 1 - Φ(1.09) = 1 - 0.8621 = 0.1379<br>
-            P(7 ≤ X ≤ 10) = 0.9495 - 0.1379 = 0.8116 (81.16%)</div>
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">a) P(curso dure entre 7 y 10 hs) = P(7 ≤ X ≤ 10)</div>
+              <div class="unju-step-line">z₁ = (7 - 8.2) / 1.1 = -1.2 / 1.1 = -1.09</div>
+              <div class="unju-step-line">z₂ = (10 - 8.2) / 1.1 = 1.8 / 1.1 = 1.64</div>
+              <div class="unju-step-line">P(7 ≤ X ≤ 10) = Φ(1.64) - Φ(-1.09) = 0.9495 - (1 - 0.8621) = 0.9495 - 0.1379</div>
+              <div class="unju-result-pill green">P(7 ≤ X ≤ 10) = 0.8116 ≈ 81.16%</div>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">6</span> <strong>Proyección en Población N = 20 encuentros:</strong><br>
-            E = N · P = 20 × 0.8116 = 16.23 ≈ 16 encuentros</div>
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">b) Decisión de Servicio Extra de Cafetería (P > 75%)</div>
+              <div class="unju-result-pill green">Como 81.16% > 75%, SE RECOMIENDA contratar el servicio extra.</div>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">7</span> <strong>Conclusión redactada:</strong><br>
-            <em>Respuesta: Como la probabilidad 81.16% > 75%, SE RECOMIENDA contratar el servicio extra. Se espera que 16 de los 20 encuentros duren entre 7 y 10 horas.</em></div>
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">c) Encuentros esperados de N = 20 al año</div>
+              <div class="unju-step-line">E = N · P = 20 × 0.8116 = 16.23</div>
+              <div class="unju-metric-box">
+                <span class="unju-big-number">16</span>
+                <span class="unju-metric-text">encuentros de capacitación se espera que duren entre 7 y 10 horas.</span>
+              </div>
+            </div>
           </div>
         </div>
       `;
@@ -505,7 +659,7 @@ const App = {
           </div>
           <span class="badge badge-success" style="font-size:0.95rem; font-family:monospace;">X ~ U(a, b)</span>
         </div>
-        <p class="hero-desc">Densidad de probabilidad constante en todo el intervalo cerrado [a, b].</p>
+        <p class="hero-desc">Densidad constante en el intervalo cerrado [a, b].</p>
 
         <!-- Calculadora -->
         <div class="calc-mini-box">
@@ -519,39 +673,54 @@ const App = {
           <div id="calcRes_uniform" class="result-card mt-2" style="display:none;"></div>
         </div>
 
-        <!-- Ejemplo Mínimo del Parcial 2025 -->
-        <div class="formula-box highlight mt-2">
-          <strong style="color:var(--secondary);">📌 Ejemplo Exacto del Parcial 2025 (Temario A, Ej 6):</strong>
-          <p style="margin-top:0.3rem;"><em>"El tiempo de reposición (lead time) de un repuesto crítico se distribuye uniformemente entre 4 y 10 días: X ~ U(4, 10). a) Calcule media y desvío estándar. b) ¿P(X ≥ 8)? c) ¿P(X ≤ 6)? d) ¿Qué es más probable?"</em></p>
+        <div id="calcOnlyBanner" class="alert-box mt-2" style="display:${this.viewMode === 'calcOnly' ? 'block' : 'none'}; cursor:pointer;" onclick="App.setViewMode('both')">
+          💡 <strong>Modo Solo Calculadora activo:</strong> El desarrollo de la carpeta está oculto para agilizar cálculos. Toca aquí o en "📝 Calculadora + Carpeta" para verlo.
         </div>
 
-        <!-- Qué poner en la hoja del parcial -->
-        <div class="mt-2">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
-            <h4 style="color:#34d399; margin:0;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
-            <button class="copy-btn" onclick="App.copySheetText('sheet_uniformContinuous', this)">📋 Copiar para mi Carpeta</button>
-          </div>
-          <div class="sheet-template" id="sheet_uniformContinuous">
-            <div class="sheet-step"><span class="step-num">1</span> <strong>Definición formal de la Variable:</strong><br>
-            <em>Sea X: tiempo de reposición (lead time) en días. X es una V.A. continua uniforme en [4, 10].</em></div>
+        <div id="resolutionFolderSection" class="resolution-folder-view" style="display:${this.viewMode === 'calcOnly' ? 'none' : 'block'};">
+          <div class="unju-slide-container" id="sheet_uniformContinuous">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+              <div class="unju-res-header" style="margin:0;">
+                <div class="unju-circle-num">6</div>
+                <div class="unju-res-title">
+                  <h3>Lead Time de Repuesto Crítico</h3>
+                  <span>Distribución Uniforme Continua • Parcial 2025 UNJu</span>
+                </div>
+              </div>
+              <button class="copy-btn" onclick="App.copySheetText('sheet_uniformContinuous', this)">📋 Copiar para mi Carpeta</button>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">2</span> <strong>Modelo y Parámetros:</strong><br>
-            X ~ U(a = 4, b = 10) con longitud de base b - a = 6 días.</div>
+            <div class="unju-problem-text">
+              El tiempo de reposición de un repuesto crítico se distribuye uniformemente entre 4 y 10 días: X ~ U(4, 10). a) Media y desvío estándar. b) P(X ≥ 8 días). c) P(X ≤ 6 días). d) ¿Qué es más probable?
+            </div>
 
-            <div class="sheet-step"><span class="step-num">3</span> <strong>Función de Densidad y Distribución:</strong><br>
-            f(x) = 1 / (b - a) = 1 / 6    para 4 ≤ x ≤ 10<br>
-            F(x) = (x - a) / (b - a) = (x - 4) / 6    para 4 ≤ x ≤ 10</div>
+            <div class="unju-pills-row">
+              <span class="unju-pill-tag">a = 4 días</span>
+              <span class="unju-pill-tag">b = 10 días</span>
+              <span class="unju-pill-tag">b - a = 6 días</span>
+              <span class="unju-pill-tag">X ~ U(4, 10)</span>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">4</span> <strong>Cálculo de Media y Desviación Estándar:</strong><br>
-            μ = E(X) = (a + b) / 2 = (4 + 10) / 2 = 7 días<br>
-            Var(X) = (b - a)² / 12 = 36 / 12 = 3 ⟹ σ = √3 ≈ 1.732 días</div>
+            <div class="unju-formula-bar">
+              f(x) = 1 / (b - a) = 1 / 6 &nbsp;•&nbsp; P(X ≥ x) = (b - x) / (b - a)
+            </div>
 
-            <div class="sheet-step"><span class="step-num">5</span> <strong>Cálculo de Probabilidades:</strong><br>
-            P(X ≥ 8) = (10 - 8) / (10 - 4) = 2/6 = 0.3333 (33.33%)<br>
-            P(X ≤ 6) = (6 - 4) / (10 - 4) = 2/6 = 0.3333 (33.33%)</div>
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">a) Media y Desvío Estándar</div>
+              <div class="unju-step-line">μ = E(X) = (4 + 10) / 2 = 7 días</div>
+              <div class="unju-step-line">Var(X) = (10 - 4)² / 12 = 36 / 12 = 3 ⟹ σ = √3 ≈ 1.732 días</div>
+              <div class="unju-metric-box">
+                <span class="unju-big-number">7</span>
+                <span class="unju-metric-text">días de tiempo medio de reposición del repuesto.</span>
+              </div>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">6</span> <strong>Conclusión:</strong><br>
-            <em>Respuesta: Ambos sucesos son igualmente probables (33.33% cada uno) debido a la simetría de la distribución uniforme respecto a su media μ = 7 días.</em></div>
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">b) P(X ≥ 8) y c) P(X ≤ 6)</div>
+              <div class="unju-step-line">P(X ≥ 8) = (10 - 8) / (10 - 4) = 2/6 = 0.3333 (33.33%)</div>
+              <div class="unju-step-line">P(X ≤ 6) = (6 - 4) / (10 - 4) = 2/6 = 0.3333 (33.33%)</div>
+              <div class="unju-result-pill green">Ambos sucesos son igualmente probables (33.33%) por simetría.</div>
+            </div>
           </div>
         </div>
       `;
@@ -579,35 +748,59 @@ const App = {
           <div id="calcRes_gamma" class="result-card mt-2" style="display:none;"></div>
         </div>
 
-        <!-- Ejemplo Mínimo del Parcial 2025 -->
-        <div class="formula-box highlight mt-2">
-          <strong style="color:var(--secondary);">📌 Ejemplo Exacto del Parcial 2025 (Temario A, Ej 4d-e):</strong>
-          <p style="margin-top:0.3rem;"><em>"Una heladería recibe 5 clientes/min (1 cliente cada 12 segundos). Se define Y como el tiempo en segundos hasta que lleguen 2 clientes (α = 2, β = 12 seg). Calcule P(Y ≤ 30 seg) y P(30 ≤ Y ≤ 48 seg)."</em></p>
+        <div id="calcOnlyBanner" class="alert-box mt-2" style="display:${this.viewMode === 'calcOnly' ? 'block' : 'none'}; cursor:pointer;" onclick="App.setViewMode('both')">
+          💡 <strong>Modo Solo Calculadora activo:</strong> El desarrollo de la carpeta está oculto para agilizar cálculos. Toca aquí o en "📝 Calculadora + Carpeta" para verlo.
         </div>
 
-        <!-- Qué poner en la hoja del parcial -->
-        <div class="mt-2">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
-            <h4 style="color:#34d399; margin:0;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
-            <button class="copy-btn" onclick="App.copySheetText('sheet_gamma', this)">📋 Copiar para mi Carpeta</button>
-          </div>
-          <div class="sheet-template" id="sheet_gamma">
-            <div class="sheet-step"><span class="step-num">1</span> <strong>Definición formal de la Variable:</strong><br>
-            <em>Sea Y: tiempo en segundos hasta la llegada de α = 2 clientes. Y es una V.A. continua.</em></div>
+        <div id="resolutionFolderSection" class="resolution-folder-view" style="display:${this.viewMode === 'calcOnly' ? 'none' : 'block'};">
+          <div class="unju-slide-container" id="sheet_gamma">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+              <div class="unju-res-header" style="margin:0;">
+                <div class="unju-circle-num">4</div>
+                <div class="unju-res-title">
+                  <h3>Heladería en Shopping (Tiempo Gamma)</h3>
+                  <span>Distribución Gamma • Parcial 2025 UNJu</span>
+                </div>
+              </div>
+              <button class="copy-btn" onclick="App.copySheetText('sheet_gamma', this)">📋 Copiar para mi Carpeta</button>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">2</span> <strong>Parámetros en Segundos:</strong><br>
-            Tasa por segundo: λ = 5/60 = 1/12 clientes/seg<br>
-            Parámetro de escala: β = 1/λ = 12 segundos ⟹ Y ~ Gamma(α = 2, β = 12 seg)</div>
+            <div class="unju-problem-text">
+              Heladería recibe 5 clientes/min (λ = 1/12 clientes/seg, β = 12 seg). Se define Y como el tiempo en segundos hasta que lleguen 2 clientes (α = 2, β = 12 seg). Calcule P(Y ≤ 30 seg) y P(30 ≤ Y ≤ 48 seg).
+            </div>
 
-            <div class="sheet-step"><span class="step-num">3</span> <strong>Teorema Fundamental Poisson-Gamma (Cátedra UNJu):</strong><br>
-            P(Y ≤ t) = P(N_t ≥ α) = 1 - ∑ [e^(-μ) · μ^k] / k!    con μ = t / β</div>
+            <div class="unju-pills-row">
+              <span class="unju-pill-tag">α = 2 clientes</span>
+              <span class="unju-pill-tag">β = 12 seg</span>
+              <span class="unju-pill-tag">λ = 1/12</span>
+              <span class="unju-pill-tag">Y ~ Gamma(2, 12 seg)</span>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">4</span> <strong>Sustitución para t = 30 seg (μ = 30 / 12 = 2.5):</strong><br>
-            P(Y ≤ 30) = 1 - e^(-2.5) · (1 + 2.5) = 1 - 3.5 · (0.082085) = 0.7127 (71.27%)</div>
+            <div class="unju-formula-bar">
+              P(Y ≤ t) = P(N_t ≥ α) = 1 - ∑ [ e^(-μ) · μ^k ] / k! &nbsp;•&nbsp; μ = t / β
+            </div>
 
-            <div class="sheet-step"><span class="step-num">5</span> <strong>Para t = 48 seg (μ = 48 / 12 = 4):</strong><br>
-            P(Y ≤ 48) = 1 - e^(-4) · (1 + 4) = 0.9084<br>
-            P(30 ≤ Y ≤ 48) = P(Y ≤ 48) - P(Y ≤ 30) = 0.9084 - 0.7127 = 0.1957 (19.57%)</div>
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">a) P(2 clientes tarden hasta 30 seg) = P(Y ≤ 30) con μ = 30/12 = 2.5</div>
+              <div class="unju-step-line">P(Y ≤ 30) = 1 - P(0) - P(1) = 1 - e⁻²·⁵(1 + 2.5) = 1 - 3.5 · (0.082085)</div>
+              <div class="unju-result-pill green">P(Y ≤ 30) = 0.7127 ≈ 71.27%</div>
+            </div>
+
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">b) P(30 ≤ Y ≤ 48) con μ(48) = 48/12 = 4</div>
+              <div class="unju-step-line">P(Y ≤ 48) = 1 - e⁻⁴(1 + 4) = 0.9084</div>
+              <div class="unju-step-line">P(30 ≤ Y ≤ 48) = 0.9084 - 0.7127 = 0.1957</div>
+              <div class="unju-result-pill green">P(30 ≤ Y ≤ 48) = 0.1957 ≈ 19.57%</div>
+            </div>
+
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">c) Tiempo esperado de espera</div>
+              <div class="unju-step-line">E(Y) = α · β = 2 × 12 seg</div>
+              <div class="unju-metric-box">
+                <span class="unju-big-number">24</span>
+                <span class="unju-metric-text">segundos de espera en promedio hasta la llegada de los 2 clientes.</span>
+              </div>
+            </div>
           </div>
         </div>
       `;
@@ -620,7 +813,7 @@ const App = {
             <span class="badge badge-primary">TP 3 - Bivariadas</span>
           </div>
         </div>
-        <p class="hero-desc">Resolución algebraica de incógnitas (A, B, C, D) y cálculo de probabilidades marginales, uniones, condicionales y prueba formal de independencia estocástica.</p>
+        <p class="hero-desc">Resolución algebraica de incógnitas y prueba formal de independencia estocástica.</p>
 
         <!-- Calculadora de Tabla -->
         <div class="calc-mini-box">
@@ -629,27 +822,51 @@ const App = {
           <div id="contingencySolvedBox" class="result-card mt-2" style="display:none;"></div>
         </div>
 
-        <!-- Qué poner en la hoja del parcial -->
-        <div class="mt-2">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
-            <h4 style="color:#34d399; margin:0;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
-            <button class="copy-btn" onclick="App.copySheetText('sheet_contingency', this)">📋 Copiar para mi Carpeta</button>
-          </div>
-          <div class="sheet-template" id="sheet_contingency">
-            <div class="sheet-step"><span class="step-num">1</span> <strong>Cálculo de Incógnitas por Balance de Filas/Columnas:</strong><br>
-            • C = Total A - (18 + 12 + 5) = 37 - 35 = 2<br>
-            • A = Total C - (8 + 4 + 1) = 27 - 13 = 14<br>
-            • B = Total D - (22 + 5 + 3) = 40 - 30 = 10<br>
-            • D = 5 + 3 + 4 + 5 + 7 = 24 (Total Deserción)</div>
+        <div id="calcOnlyBanner" class="alert-box mt-2" style="display:${this.viewMode === 'calcOnly' ? 'block' : 'none'}; cursor:pointer;" onclick="App.setViewMode('both')">
+          💡 <strong>Modo Solo Calculadora activo:</strong> El desarrollo de la carpeta está oculto para agilizar cálculos. Toca aquí o en "📝 Calculadora + Carpeta" para verlo.
+        </div>
 
-            <div class="sheet-step"><span class="step-num">2</span> <strong>Probabilidad Marginal:</strong> P(Sin Internet) = 13 / 180 = 0.0722 (7.22%)</div>
-            <div class="sheet-step"><span class="step-num">3</span> <strong>Probabilidad de Unión Mutuamente Excluyente:</strong> P(D ∪ E) = (40 + 56)/180 = 96/180 = 0.5333</div>
-            <div class="sheet-step"><span class="step-num">4</span> <strong>Regla General de la Adición:</strong> P(Ap ∪ C) = P(Ap) + P(C) - P(Ap ∩ C) = (89 + 27 - 14)/180 = 102/180 = 0.5667</div>
-            <div class="sheet-step"><span class="step-num">5</span> <strong>Probabilidad Condicional:</strong> P(C | Deserción) = P(C ∩ Des) / P(Des) = 4 / 24 = 1/6 = 0.1667</div>
-            <div class="sheet-step"><span class="step-num">6</span> <strong>Demostración de Independencia (Comisión D y Aprobado):</strong><br>
-            P(D ∩ Ap) = 22 / 180 = 0.1222<br>
-            P(D) × P(Ap) = (40/180) × (89/180) = 0.1099<br>
-            Como 0.1222 ≠ 0.1099, los sucesos NO SON INDEPENDIENTES.</div>
+        <div id="resolutionFolderSection" class="resolution-folder-view" style="display:${this.viewMode === 'calcOnly' ? 'none' : 'block'};">
+          <div class="unju-slide-container" id="sheet_contingency">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+              <div class="unju-res-header" style="margin:0;">
+                <div class="unju-circle-num">1</div>
+                <div class="unju-res-title">
+                  <h3>Ciberseguridad (180 alumnos)</h3>
+                  <span>Tabla Bidimensional • Parcial 2025 UNJu</span>
+                </div>
+              </div>
+              <button class="copy-btn" onclick="App.copySheetText('sheet_contingency', this)">📋 Copiar para mi Carpeta</button>
+            </div>
+
+            <div class="unju-pills-row">
+              <span class="unju-pill-tag">N = 180 alumnos</span>
+              <span class="unju-pill-tag">5 comisiones</span>
+              <span class="unju-pill-tag">4 estados académicos</span>
+            </div>
+
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">k) Valores Faltantes por Balance de Filas y Columnas</div>
+              <div class="unju-step-line">• C = Total A - (18 + 12 + 5) = 37 - 35 = <strong>2</strong></div>
+              <div class="unju-step-line">• A = Total C - (8 + 4 + 1) = 27 - 13 = <strong>14</strong></div>
+              <div class="unju-step-line">• B = Total D - (22 + 5 + 3) = 40 - 30 = <strong>10</strong></div>
+              <div class="unju-step-line">• D = 5 + 3 + 4 + 5 + 7 = <strong>24</strong> (Total Deserción)</div>
+            </div>
+
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">d, e, f, h) Probabilidades Marginales, Uniones y Condicionales</div>
+              <div class="unju-step-line">P(Sin Internet) = 13 / 180 = <strong>0.0722 (7.22%)</strong></div>
+              <div class="unju-step-line">P(D ∪ E) = (40 + 56)/180 = 96/180 = <strong>0.5333 (53.33%)</strong></div>
+              <div class="unju-step-line">P(Ap ∪ C) = P(Ap) + P(C) - P(Ap ∩ C) = (89 + 27 - 14)/180 = 102/180 = <strong>0.5667 (56.67%)</strong></div>
+              <div class="unju-step-line">P(C | Deserción) = 4 / 24 = <strong>0.1667 (16.67%)</strong></div>
+            </div>
+
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">i) Demostración Formal de Independencia (Comisión D y Aprobado)</div>
+              <div class="unju-step-line">P(D ∩ Ap) = 22 / 180 = 0.1222</div>
+              <div class="unju-step-line">P(D) × P(Ap) = (40/180) × (89/180) = 0.1099</div>
+              <div class="unju-result-pill pink">Como 0.1222 ≠ 0.1099, los sucesos NO SON INDEPENDIENTES.</div>
+            </div>
           </div>
         </div>
       `;
@@ -664,29 +881,59 @@ const App = {
         </div>
         <p class="hero-desc">Cálculo de la probabilidad total del efecto y de las probabilidades a posteriori de las causas (Teorema de Bayes).</p>
 
-        <!-- Qué poner en la hoja del parcial -->
-        <div class="mt-2">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
-            <h4 style="color:#34d399; margin:0;">📝 CÓMO TENGO QUE PONER EN MI HOJA (Paso a Paso para 10/10):</h4>
-            <button class="copy-btn" onclick="App.copySheetText('sheet_bayes', this)">📋 Copiar para mi Carpeta</button>
-          </div>
-          <div class="sheet-template" id="sheet_bayes">
-            <div class="sheet-step"><span class="step-num">1</span> <strong>Partición del Espacio Muestral (Causas Aᵢ):</strong><br>
-            P(Ambulatorio A₁) = 0.40 | P(Magistrales A₂) = 0.35 | P(Alto Costo A₃) = 0.25 (Σ = 1.00)</div>
+        <div id="calcOnlyBanner" class="alert-box mt-2" style="display:${this.viewMode === 'calcOnly' ? 'block' : 'none'}; cursor:pointer;" onclick="App.setViewMode('both')">
+          💡 <strong>Modo Solo Calculadora activo:</strong> El desarrollo de la carpeta está oculto para agilizar cálculos. Toca aquí o en "📝 Calculadora + Carpeta" para verlo.
+        </div>
 
-            <div class="sheet-step"><span class="step-num">2</span> <strong>Probabilidades Condicionales (Verosimilitud):</strong><br>
-            Sin inconvenientes (S): P(S|A₁) = 0.98, P(S|A₂) = 0.99, P(S|A₃) = 0.95<br>
-            Con inconvenientes (Sᶜ): P(Sᶜ|A₁) = 0.02, P(Sᶜ|A₂) = 0.01, P(Sᶜ|A₃) = 0.05</div>
+        <div id="resolutionFolderSection" class="resolution-folder-view" style="display:${this.viewMode === 'calcOnly' ? 'none' : 'block'};">
+          <div class="unju-slide-container" id="sheet_bayes">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+              <div class="unju-res-header" style="margin:0;">
+                <div class="unju-circle-num">2</div>
+                <div class="unju-res-title">
+                  <h3>Farmacias del NOA</h3>
+                  <span>Probabilidad Total y Bayes • Parcial 2025 UNJu</span>
+                </div>
+              </div>
+              <button class="copy-btn" onclick="App.copySheetText('sheet_bayes', this)">📋 Copiar para mi Carpeta</button>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">3</span> <strong>Teorema de la Probabilidad Total: P(S)</strong><br>
-            P(S) = ∑ P(A_i) · P(S | A_i) = (0.40)(0.98) + (0.35)(0.99) + (0.25)(0.95) = 0.9760 (97.60%)</div>
+            <div class="unju-problem-text">
+              Venta de medicamentos: Ambulatorio (A₁) 40%, Magistrales (A₂) 35%, Alto Costo (A₃) 25%. Probabilidad de adquirir sin inconvenientes (S): 98%, 99% y 95% respectivamente.
+            </div>
 
-            <div class="sheet-step"><span class="step-num">4</span> <strong>Teorema de Bayes: P(Alto Costo A₃ | Sin Inconveniente S)</strong><br>
-            P(A_3 | S) = [P(A_3) · P(S | A_3)] / P(S) = (0.25 · 0.95) / 0.9760 = 0.2375 / 0.9760 = 0.2433 (24.33%)</div>
+            <div class="unju-pills-row">
+              <span class="unju-pill-tag">P(A₁) = 0.40</span>
+              <span class="unju-pill-tag">P(A₂) = 0.35</span>
+              <span class="unju-pill-tag">P(A₃) = 0.25</span>
+              <span class="unju-pill-tag">P(S|A₁) = 0.98</span>
+              <span class="unju-pill-tag">P(S|A₂) = 0.99</span>
+              <span class="unju-pill-tag">P(S|A₃) = 0.95</span>
+            </div>
 
-            <div class="sheet-step"><span class="step-num">5</span> <strong>Teorema de Bayes: P(Ambulatorio A₁ | Con Inconveniente Sᶜ)</strong><br>
-            P(Sᶜ) = 1 - 0.9760 = 0.0240<br>
-            P(A_1 | S^c) = [P(A_1) · P(S^c | A_1)] / P(S^c) = (0.40 · 0.02) / 0.0240 = 0.0080 / 0.0240 = 0.3333 (33.33%)</div>
+            <div class="unju-formula-bar">
+              P(A_j | S) = [ P(A_j) · P(S | A_j) ] / P(S)
+            </div>
+
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">b) Teorema de la Probabilidad Total: P(S)</div>
+              <div class="unju-step-line">P(S) = ∑ P(A_i) · P(S | A_i) = (0.40)(0.98) + (0.35)(0.99) + (0.25)(0.95)</div>
+              <div class="unju-step-line">P(S) = 0.3920 + 0.3465 + 0.2375 = 0.9760</div>
+              <div class="unju-result-pill green">P(S) = 0.9760 ≈ 97.60%</div>
+            </div>
+
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">c) Teorema de Bayes: P(Alto Costo A₃ | Sin Inconveniente S)</div>
+              <div class="unju-step-line">P(A₃ | S) = [ P(A₃) · P(S | A₃) ] / P(S) = (0.25 · 0.95) / 0.9760 = 0.2375 / 0.9760</div>
+              <div class="unju-result-pill green">P(A₃ | S) = 0.2433 ≈ 24.33%</div>
+            </div>
+
+            <div class="unju-inciso-card">
+              <div class="unju-inciso-title">d) Teorema de Bayes: P(Ambulatorio A₁ | Con Inconveniente Sᶜ)</div>
+              <div class="unju-step-line">P(Sᶜ) = 1 - 0.9760 = 0.0240</div>
+              <div class="unju-step-line">P(A₁ | Sᶜ) = [ P(A₁) · P(Sᶜ | A₁) ] / P(Sᶜ) = (0.40 · 0.02) / 0.0240 = 0.0080 / 0.0240</div>
+              <div class="unju-result-pill green">P(A₁ | Sᶜ) = 0.3333 ≈ 33.33% (1/3)</div>
+            </div>
           </div>
         </div>
       `;
