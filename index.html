@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
   <meta name="theme-color" content="#6366f1">
-  <meta name="description" content="Guía Teórica Oficial y Solucionador Paso a Paso de Parciales de Probabilidad y Estadística - Facultad de Ingeniería UNJu.">
+  <meta name="description" content="Guía Teórica Oficial, Identificador de Distribuciones y Solucionador Paso a Paso de Parciales - Facultad de Ingeniería UNJu.">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Probabilidad & Estadística - FI-UNJu | Teoría y Solucionador de Parciales</title>
+  <title>Probabilidad & Estadística - FI-UNJu | ¿Qué Distribución Es? y Solucionador</title>
   
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="icons/favicon.png">
@@ -29,10 +29,10 @@
     <!-- Desktop Navigation -->
     <nav class="desktop-nav">
       <a class="nav-link active" data-tab="home" onclick="App.navigateTo('home')">🏠 Inicio</a>
-      <a class="nav-link" data-tab="theory" onclick="App.navigateTo('theory')">📖 Teoría</a>
+      <a class="nav-link" data-tab="guide" onclick="App.navigateTo('guide')">🧭 ¿Cuál es? (TP3-TP4)</a>
       <a class="nav-link" data-tab="solvers" onclick="App.navigateTo('solvers')">🧮 Solucionador</a>
       <a class="nav-link" data-tab="exams" onclick="App.navigateTo('exams')">📝 Parciales</a>
-      <a class="nav-link" data-tab="tables" onclick="App.navigateTo('tables')">📊 Tablas</a>
+      <a class="nav-link" data-tab="theory" onclick="App.navigateTo('theory')">📖 Teoría & Tablas</a>
     </nav>
 
     <!-- Header Actions -->
@@ -58,12 +58,28 @@
           <span class="badge badge-primary">⚡ Resuelve Parciales Reales</span>
           <span class="badge badge-success">📱 100% Optimizado Celular</span>
           <span class="badge badge-warning">🌐 Funciona Offline (PWA)</span>
-          <span class="badge badge-secondary">📐 Fórmulas Cátedra UNJu</span>
+          <span class="badge badge-secondary">📐 Cátedra FI-UNJu</span>
+        </div>
+      </div>
+
+      <!-- Featured Card: ¿Qué Distribución Es? -->
+      <div class="solver-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(16, 185, 129, 0.1) 100%); border-color: rgba(99, 102, 241, 0.4); margin-bottom: 1.5rem; cursor: pointer;" onclick="App.navigateTo('guide')">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+          <div style="flex: 1; min-width: 260px;">
+            <span class="badge badge-success mb-1">🔥 HERRAMIENTA CLAVE DE EXAMEN</span>
+            <h3 style="font-size: 1.3rem; font-weight: 800; margin: 0.3rem 0;">🧭 ¿Qué Distribución debo usar en mi ejercicio?</h3>
+            <p class="hero-desc" style="margin-bottom: 0;">
+              Compara de un vistazo las distribuciones del <strong>TP 3 (Discretas)</strong> y <strong>TP 4 (Continuas)</strong>. Aprende qué palabras clave del enunciado la delatan, mira un <strong>ejemplo mínimo resuelto</strong> y descubre <strong>exactamente qué tienes que escribir en la hoja del parcial</strong> para que el profesor te ponga 10/10.
+            </p>
+          </div>
+          <div>
+            <button class="btn btn-primary" onclick="event.stopPropagation(); App.navigateTo('guide');">Ver Guía y Plantillas →</button>
+          </div>
         </div>
       </div>
 
       <!-- Quick Action Cards Grid -->
-      <h3 class="mb-1">🚀 Solucionadores Rápidos</h3>
+      <h3 class="mb-1">🚀 Solucionadores Rápidos de Examen</h3>
       <div class="grid-cards">
         
         <div class="feature-card" onclick="App.openSolver('contingency', 'parcial1')">
@@ -169,20 +185,63 @@
     </section>
 
     <!-- ============================================================
-         TAB 2: TEORÍA COMPLETA
+         TAB 2: IDENTIFICADOR DE DISTRIBUCIONES (TP3 - TP4)
          ============================================================ -->
-    <section id="tab-theory" class="tab-content">
-      <div class="solver-header">
-        <div class="solver-title">📖 Teoría de Probabilidad y Estadística</div>
-        <div style="flex:1; max-width:320px;">
-          <input type="text" class="form-control" id="theorySearchInput" placeholder="🔍 Buscar tema, fórmula, teorema..." oninput="App.filterTheory()">
+    <section id="tab-guide" class="tab-content">
+      
+      <!-- Banner / Title -->
+      <div class="hero-banner" style="padding: 1.25rem;">
+        <h2 class="hero-title" style="font-size: 1.4rem;">🧭 ¿Qué Distribución Es? + Plantilla para la Hoja</h2>
+        <p class="hero-desc">
+          Compara fácilmente las distribuciones del <strong>TP 3 (Discretas)</strong> y <strong>TP 4 (Continuas)</strong>. Identifica tu problema por palabras clave, prueba su calculadora mínima y copia exactamente los <strong>pasos obligatorios para la hoja del examen</strong>.
+        </p>
+      </div>
+
+      <!-- Asistente / Mago Decisor Interactivo -->
+      <div class="wizard-box">
+        <h3 style="font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+          <span>🧙‍♂️</span> Asistente Guiado: ¿Cuál es mi distribución en 2 clics?
+        </h3>
+        <p class="hero-desc" style="margin-bottom: 0.75rem;">
+          Selecciona cómo se comporta la variable de tu ejercicio:
+        </p>
+
+        <!-- Step 1: Discreta vs Continua -->
+        <div class="wizard-options">
+          <div class="wizard-btn" onclick="App.wizardSelectType('discreta')">
+            <strong>🔢 1. Se cuenta (Enteros: 0, 1, 2...)</strong>
+            <small>Cantidad de alumnos, piezas defectuosas, llamadas, peces, clientes. (TP 3 - Discretas)</small>
+          </div>
+          <div class="wizard-btn" onclick="App.wizardSelectType('continua')">
+            <strong>📏 2. Se mide (Continuo con decimales)</strong>
+            <small>Tiempo en horas/segundos, peso, longitud, error, vida útil, lead time. (TP 4 - Continuas)</small>
+          </div>
+        </div>
+
+        <!-- Step 2: Specific characteristic options (dynamic) -->
+        <div id="wizardStep2" style="display:none; margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--border-color);">
+          <h4 id="wizardStep2Title" style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--secondary);"></h4>
+          <div class="wizard-options" id="wizardStep2Options"></div>
         </div>
       </div>
-      <p class="hero-desc mb-2">Contenido teórico basado en los apuntes de cátedra de la Dra. Nora Lac Prugent, Marta Corro y el Ing. Octavio Daniel Coro (FI - UNJu).</p>
 
-      <div id="theoryContainer">
-        <!-- Injected via JavaScript from TheoryData -->
+      <!-- Search & Filters -->
+      <div class="solver-header mb-2">
+        <div class="pills-nav" style="margin-bottom: 0;">
+          <button class="pill-item active" data-filter="all" onclick="App.filterDistGuide('all')">Todas (11 Distribuciones)</button>
+          <button class="pill-item" data-filter="tp3" onclick="App.filterDistGuide('tp3')">TP 3 - Discretas</button>
+          <button class="pill-item" data-filter="tp4" onclick="App.filterDistGuide('tp4')">TP 4 - Continuas</button>
+        </div>
+        <div style="flex: 1; max-width: 320px;">
+          <input type="text" class="form-control" id="distGuideSearchInput" placeholder="🔍 Buscar palabras del enunciado..." oninput="App.searchDistGuide(this.value)">
+        </div>
       </div>
+
+      <!-- Distribution Cards Container -->
+      <div id="distGuideContainer">
+        <!-- Rendered dynamically by JavaScript from DistGuideData -->
+      </div>
+
     </section>
 
     <!-- ============================================================
@@ -357,10 +416,23 @@
     </section>
 
     <!-- ============================================================
-         TAB 5: TABLAS ESTADÍSTICAS (NORMAL Z & GAMMA)
+         TAB 5: TEORÍA COMPLETA & TABLAS
          ============================================================ -->
-    <section id="tab-tables" class="tab-content">
+    <section id="tab-theory" class="tab-content">
       <div class="solver-header">
+        <div class="solver-title">📖 Teoría de Probabilidad y Estadística</div>
+        <div style="flex:1; max-width:320px;">
+          <input type="text" class="form-control" id="theorySearchInput" placeholder="🔍 Buscar tema, fórmula, teorema..." oninput="App.filterTheory()">
+        </div>
+      </div>
+      <p class="hero-desc mb-2">Contenido teórico basado en los apuntes de cátedra de la Dra. Nora Lac Prugent, Marta Corro y el Ing. Octavio Daniel Coro (FI - UNJu).</p>
+
+      <div id="theoryContainer">
+        <!-- Injected via JavaScript from TheoryData -->
+      </div>
+
+      <!-- Tablas Estadísticas Integradas al Final de Teoría -->
+      <div class="solver-header mt-3">
         <div class="solver-title">📊 Tablas Estadísticas Interactivas</div>
         <div class="pills-nav" style="margin-bottom:0;">
           <button class="pill-item active" id="pillTabNormal" onclick="App.switchStatTable('normal')">Tabla Normal Estándar Z</button>
@@ -376,19 +448,13 @@
             <input type="number" step="0.01" class="form-control" id="zSearchInput" placeholder="Buscar valor de Z (ej: 1.64)..." oninput="App.highlightZTable(this.value)">
           </div>
         </div>
-        <p class="hero-desc">Busca cualquier valor de Z o probabilidad acumulada. Se resaltará automáticamente en la tabla.</p>
-        <div class="stat-table-wrapper" id="normalTableContainer">
-          <!-- Normal Table generated via JS -->
-        </div>
+        <div class="stat-table-wrapper" id="normalTableContainer"></div>
       </div>
 
       <!-- Gamma Table Section -->
       <div id="statTableGammaSection" class="solver-card mt-2" style="display:none;">
         <div class="solver-title mb-1">Tabla de Valores de la Función Gamma Γ(α) para α ∈ [1.00, 1.99]</div>
-        <p class="hero-desc">Para valores mayores recordar la propiedad de recurrencia: <code>Γ(α + 1) = α · Γ(α)</code> y para enteros <code>Γ(n) = (n - 1)!</code>.</p>
-        <div class="stat-table-wrapper" id="gammaTableContainer">
-          <!-- Gamma Table generated via JS -->
-        </div>
+        <div class="stat-table-wrapper" id="gammaTableContainer"></div>
       </div>
     </section>
 
@@ -400,26 +466,27 @@
       <span class="nav-icon">🏠</span>
       <span>Inicio</span>
     </a>
-    <a class="bottom-nav-item" data-tab="theory" onclick="App.navigateTo('theory')">
-      <span class="nav-icon">📖</span>
-      <span>Teoría</span>
+    <a class="bottom-nav-item" data-tab="guide" onclick="App.navigateTo('guide')">
+      <span class="nav-icon">🧭</span>
+      <span>¿Cuál es?</span>
     </a>
     <a class="bottom-nav-item" data-tab="solvers" onclick="App.navigateTo('solvers')">
       <span class="nav-icon">🧮</span>
-      <span>Solucionar</span>
+      <span>Calculadora</span>
     </a>
     <a class="bottom-nav-item" data-tab="exams" onclick="App.navigateTo('exams')">
       <span class="nav-icon">📝</span>
       <span>Parciales</span>
     </a>
-    <a class="bottom-nav-item" data-tab="tables" onclick="App.navigateTo('tables')">
-      <span class="nav-icon">📊</span>
-      <span>Tablas</span>
+    <a class="bottom-nav-item" data-tab="theory" onclick="App.navigateTo('theory')">
+      <span class="nav-icon">📖</span>
+      <span>Teoría</span>
     </a>
   </nav>
 
   <!-- Application Scripts -->
   <script src="js/math-utils.js"></script>
+  <script src="js/dist-guide-data.js"></script>
   <script src="js/theory-data.js"></script>
   <script src="js/exam-data.js"></script>
   <script src="js/solvers.js"></script>

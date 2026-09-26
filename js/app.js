@@ -1514,3 +1514,354 @@ const App = {
 
 // Auto initialize on DOM ready
 document.addEventListener('DOMContentLoaded', () => App.init());
+
+// ==========================================================================
+// DISTRIBUTION GUIDE & EXAM SHEET TEMPLATES (TP3 & TP4)
+// ==========================================================================
+
+App.initDistGuide = function() {
+  this.currentGuideFilter = 'all';
+  this.renderDistGuide();
+};
+
+App.renderDistGuide = function() {
+  const container = document.getElementById('distGuideContainer');
+  if (!container || typeof DistGuideData === 'undefined') return;
+
+  const filter = this.currentGuideFilter;
+  const search = (document.getElementById('distGuideSearchInput')?.value || '').toLowerCase().trim();
+
+  let list = DistGuideData.filter(d => {
+    if (filter === 'tp3' && !d.tp.includes('TP 3')) return false;
+    if (filter === 'tp4' && !d.tp.includes('TP 4')) return false;
+    if (search) {
+      const matchName = d.name.toLowerCase().includes(search);
+      const matchNot = d.notation.toLowerCase().includes(search);
+      const matchSummary = d.summary.toLowerCase().includes(search);
+      const matchKw = d.keywords.some(k => k.toLowerCase().includes(search));
+      const matchEx = d.example.statement.toLowerCase().includes(search);
+      return matchName || matchNot || matchSummary || matchKw || matchEx;
+    }
+    return true;
+  });
+
+  if (list.length === 0) {
+    container.innerHTML = `
+      <div class="result-card text-center" style="padding: 2rem;">
+        <p>No se encontraron distribuciones para el término ingresado.</p>
+        <button class="btn btn-secondary btn-sm mt-1" onclick="App.clearDistGuideSearch()">Limpiar búsqueda</button>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = list.map(d => `
+    <div class="guide-card" id="guideCard_${d.id}">
+      <div class="guide-card-header">
+        <div class="guide-card-title">
+          <span>${d.icon}</span>
+          <span>${d.name}</span>
+          <span class="badge ${d.tp.includes('TP 3') ? 'badge-primary' : 'badge-secondary'}" style="font-size:0.75rem;">${d.tp}</span>
+        </div>
+        <span class="badge badge-success" style="font-size:0.9rem; font-family:monospace;">${d.notation}</span>
+      </div>
+
+      <p class="hero-desc" style="margin-bottom:0.6rem;">${d.summary}</p>
+
+      <!-- Palabras Clave en el Enunciado -->
+      <div style="margin: 0.8rem 0;">
+        <strong style="font-size:0.82rem; color:var(--secondary); text-transform:uppercase;">🎯 Palabras Clave que la delatan en el enunciado:</strong>
+        <div class="keywords-tag-list">
+          ${d.keywords.map(k => `<span class="keyword-tag">⚡ ${k}</span>`).join('')}
+        </div>
+      </div>
+
+      <!-- Ejemplo Mínimo Resuelto del TP -->
+      <div class="formula-box highlight">
+        <strong style="color:var(--primary);">📌 Ejemplo Mínimo Típico (de Parcial / TP):</strong>
+        <p style="margin-top:0.3rem;"><em>"${d.example.statement}"</em></p>
+      </div>
+
+      <!-- Qué poner en la hoja del examen (Plantilla) -->
+      <div style="margin-top: 1rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.4rem;">
+          <strong style="font-size:0.92rem; color:#34d399;">📝 QUÉ PONER EN LA HOJA DEL EXAMEN (Paso a Paso):</strong>
+          <button class="btn btn-secondary btn-sm" onclick="App.toggleSheetTemplate('${d.id}')">👁️ Mostrar / Ocultar Plantilla</button>
+        </div>
+        <div id="sheet_${d.id}">
+          ${d.whatToWrite}
+        </div>
+      </div>
+
+      <!-- Mini Calculadora Interactiva Directa -->
+      <div class="calc-mini-box">
+        <strong style="font-size:0.85rem; color:var(--text-primary); display:block; margin-bottom:0.6rem;">🧮 Mini-Calculadora Rápida para este Ejemplo:</strong>
+        ${App.renderMiniCalculatorForm(d)}
+        <div id="miniRes_${d.id}" class="mt-1" style="display:none;"></div>
+      </div>
+    </div>
+  `).join('');
+};
+
+App.toggleSheetTemplate = function(id) {
+  const el = document.getElementById(`sheet_${id}`);
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+};
+
+App.filterDistGuide = function(filter) {
+  this.currentGuideFilter = filter;
+  document.querySelectorAll('#tab-guide .pills-nav .pill-item').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === filter);
+  });
+  this.renderDistGuide();
+};
+
+App.searchDistGuide = function(query) {
+  this.renderDistGuide();
+};
+
+App.clearDistGuideSearch = function() {
+  const inp = document.getElementById('distGuideSearchInput');
+  if (inp) inp.value = '';
+  this.renderDistGuide();
+};
+
+// Wizard Logic
+App.wizardSelectType = function(type) {
+  const step2 = document.getElementById('wizardStep2');
+  const title = document.getElementById('wizardStep2Title');
+  const optContainer = document.getElementById('wizardStep2Options');
+  if (!step2 || !optContainer) return;
+
+  step2.style.display = 'block';
+
+  if (type === 'discreta') {
+    title.textContent = 'Paso 2: ¿Qué situación describe tu enunciado discreto?';
+    optContainer.innerHTML = `
+      <div class="wizard-btn" onclick="App.wizardJumpTo('binomial')">
+        <strong>🎲 Muestra fija n con probabilidad p (Con reposición)</strong>
+        <small>Ej: De 10 alumnos, el 80% aprueba. ¿P(8 aprueben)? ➔ Binomial B(n, p)</small>
+      </div>
+      <div class="wizard-btn" onclick="App.wizardJumpTo('hypergeometric')">
+        <strong>🐟 Muestra n extraída SIN REEMPLAZO de población N</strong>
+        <small>Ej: De 47 peces hay 23 surubíes, pescan 7 sin reposición ➔ Hipergeométrica H(N, A, n)</small>
+      </div>
+      <div class="wizard-btn" onclick="App.wizardJumpTo('poisson')">
+        <strong>⏱️ Tasa media en el tiempo o espacio (por minuto, hora)</strong>
+        <small>Ej: Llegan 5 clientes por minuto. ¿P(7 clientes)? ➔ Poisson(μ = λt)</small>
+      </div>
+      <div class="wizard-btn" onclick="App.wizardJumpTo('negativeBinomial')">
+        <strong>🎯 Pregunta por ensayos hasta conseguir r éxitos</strong>
+        <small>Ej: ¿El 6° alumno sea el 4° que cursó la materia? ➔ Binomial Negativa (Pascal)</small>
+      </div>
+      <div class="wizard-btn" onclick="App.wizardJumpTo('geometric')">
+        <strong>🎲 Ensayos necesarios hasta el PRIMER éxito (r = 1)</strong>
+        <small>Ej: Lanzar hasta encestar por primera vez ➔ Geométrica G(p)</small>
+      </div>
+    `;
+  } else {
+    title.textContent = 'Paso 2: ¿Qué forma o magnitud continua describe tu enunciado?';
+    optContainer.innerHTML = `
+      <div class="wizard-btn" onclick="App.wizardJumpTo('normal')">
+        <strong>🔔 Campana simétrica con media μ y desvío estándar σ</strong>
+        <small>Ej: Duración media 8.2 hs y desvío 1.1 hs. ¿P(7 ≤ X ≤ 10)? ➔ Normal N(μ, σ²)</small>
+      </div>
+      <div class="wizard-btn" onclick="App.wizardJumpTo('uniformContinuous')">
+        <strong>📏 Equiprobable en un intervalo acotado [a, b] (Lead time)</strong>
+        <small>Ej: Tiempo de reposición distribuido entre 4 y 10 días ➔ Uniforme U(a, b)</small>
+      </div>
+      <div class="wizard-btn" onclick="App.wizardJumpTo('gamma')">
+        <strong>⏳ Tiempo de espera continuo hasta que ocurran α eventos</strong>
+        <small>Ej: Heladería recibe 5 clientes/min. ¿Tiempo hasta que lleguen 2 clientes? ➔ Gamma(α, β)</small>
+      </div>
+      <div class="wizard-btn" onclick="App.wizardJumpTo('exponential')">
+        <strong>⚡ Tiempo continuo hasta el PRIMER evento (sin memoria)</strong>
+        <small>Ej: Tiempo entre llegadas con media β minutos ➔ Exponencial Exp(β)</small>
+      </div>
+      <div class="wizard-btn" onclick="App.wizardJumpTo('weibull')">
+        <strong>⚙️ Tiempo hasta la falla en sistemas físicos con desgaste</strong>
+        <small>Ej: Vida útil de rodamientos con escala δ y forma β ➔ Weibull(δ, β)</small>
+      </div>
+    `;
+  }
+};
+
+App.wizardJumpTo = function(distId) {
+  // Ensure we are viewing that card
+  this.currentGuideFilter = 'all';
+  document.querySelectorAll('#tab-guide .pills-nav .pill-item').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === 'all');
+  });
+  const inp = document.getElementById('distGuideSearchInput');
+  if (inp) inp.value = '';
+  this.renderDistGuide();
+
+  setTimeout(() => {
+    const card = document.getElementById(`guideCard_${distId}`);
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      card.style.borderColor = '#10b981';
+      card.style.boxShadow = '0 0 25px rgba(16, 185, 129, 0.4)';
+      setTimeout(() => {
+        card.style.borderColor = '';
+        card.style.boxShadow = '';
+      }, 2500);
+    }
+  }, 100);
+};
+
+// Render form inputs for mini calculators
+App.renderMiniCalculatorForm = function(d) {
+  const p = d.example.params;
+  if (d.id === 'binomial') {
+    return `
+      <div class="grid-3">
+        <div><label class="form-label">n</label><input type="number" id="mini_n" class="form-control" value="${p.n}"></div>
+        <div><label class="form-label">p</label><input type="number" step="0.05" id="mini_p" class="form-control" value="${p.p}"></div>
+        <div><label class="form-label">k</label><input type="number" id="mini_k" class="form-control" value="${p.k}"></div>
+      </div>
+      <button class="btn btn-primary btn-sm mt-1" onclick="App.calcMiniBinomial()">Calcular P(X = k)</button>
+    `;
+  } else if (d.id === 'negativeBinomial') {
+    return `
+      <div class="grid-3">
+        <div><label class="form-label">r (éxitos)</label><input type="number" id="mini_nb_r" class="form-control" value="${p.r}"></div>
+        <div><label class="form-label">x (ensayos)</label><input type="number" id="mini_nb_x" class="form-control" value="${p.x}"></div>
+        <div><label class="form-label">p</label><input type="number" step="0.05" id="mini_nb_p" class="form-control" value="${p.p}"></div>
+      </div>
+      <button class="btn btn-primary btn-sm mt-1" onclick="App.calcMiniNegativeBinomial()">Calcular P(X = x)</button>
+    `;
+  } else if (d.id === 'hypergeometric') {
+    return `
+      <div class="grid-4">
+        <div><label class="form-label">N</label><input type="number" id="mini_h_N" class="form-control" value="${p.N}"></div>
+        <div><label class="form-label">A</label><input type="number" id="mini_h_A" class="form-control" value="${p.A}"></div>
+        <div><label class="form-label">n</label><input type="number" id="mini_h_n" class="form-control" value="${p.n}"></div>
+        <div><label class="form-label">k</label><input type="number" id="mini_h_k" class="form-control" value="${p.k}"></div>
+      </div>
+      <button class="btn btn-primary btn-sm mt-1" onclick="App.calcMiniHypergeometric()">Calcular P(X = k)</button>
+    `;
+  } else if (d.id === 'poisson') {
+    return `
+      <div class="grid-3">
+        <div><label class="form-label">λ</label><input type="number" id="mini_poi_lambda" class="form-control" value="${p.lambda}"></div>
+        <div><label class="form-label">t</label><input type="number" step="0.1" id="mini_poi_t" class="form-control" value="${p.t}"></div>
+        <div><label class="form-label">k</label><input type="number" id="mini_poi_k" class="form-control" value="${p.k}"></div>
+      </div>
+      <button class="btn btn-primary btn-sm mt-1" onclick="App.calcMiniPoisson()">Calcular P(X = k)</button>
+    `;
+  } else if (d.id === 'normal') {
+    return `
+      <div class="grid-4">
+        <div><label class="form-label">μ</label><input type="number" step="0.1" id="mini_norm_mu" class="form-control" value="${p.mu}"></div>
+        <div><label class="form-label">σ</label><input type="number" step="0.1" id="mini_norm_sigma" class="form-control" value="${p.sigma}"></div>
+        <div><label class="form-label">x1</label><input type="number" step="0.1" id="mini_norm_x1" class="form-control" value="${p.x1}"></div>
+        <div><label class="form-label">x2</label><input type="number" step="0.1" id="mini_norm_x2" class="form-control" value="${p.x2}"></div>
+      </div>
+      <button class="btn btn-primary btn-sm mt-1" onclick="App.calcMiniNormal()">Calcular P(x1 ≤ X ≤ x2)</button>
+    `;
+  } else if (d.id === 'uniformContinuous') {
+    return `
+      <div class="grid-3">
+        <div><label class="form-label">a</label><input type="number" step="0.1" id="mini_uni_a" class="form-control" value="${p.a}"></div>
+        <div><label class="form-label">b</label><input type="number" step="0.1" id="mini_uni_b" class="form-control" value="${p.b}"></div>
+        <div><label class="form-label">x1</label><input type="number" step="0.1" id="mini_uni_x1" class="form-control" value="${p.x1}"></div>
+      </div>
+      <button class="btn btn-primary btn-sm mt-1" onclick="App.calcMiniUniform()">Calcular P(X ≥ x1)</button>
+    `;
+  } else if (d.id === 'gamma') {
+    return `
+      <div class="grid-3">
+        <div><label class="form-label">α</label><input type="number" id="mini_gam_alpha" class="form-control" value="${p.alpha}"></div>
+        <div><label class="form-label">β (seg)</label><input type="number" step="0.5" id="mini_gam_beta" class="form-control" value="${p.beta}"></div>
+        <div><label class="form-label">t1 (seg)</label><input type="number" id="mini_gam_t1" class="form-control" value="${p.t1}"></div>
+      </div>
+      <button class="btn btn-primary btn-sm mt-1" onclick="App.calcMiniGamma()">Calcular P(Y ≤ t1)</button>
+    `;
+  }
+  return `
+    <button class="btn btn-secondary btn-sm" onclick="App.navigateTo('solvers')">Abrir en Solucionador Completo →</button>
+  `;
+};
+
+// Mini Calculation Handlers
+App.calcMiniBinomial = function() {
+  const n = parseInt(document.getElementById('mini_n').value);
+  const p = parseFloat(document.getElementById('mini_p').value);
+  const k = parseInt(document.getElementById('mini_k').value);
+  const res = Solvers.solveBinomial(n, p, k, 'eq');
+  const out = document.getElementById('miniRes_binomial');
+  out.style.display = 'block';
+  out.innerHTML = `<span class="badge badge-success">P(X = ${k}) = ${res.prob.toFixed(4)} (${(res.prob * 100).toFixed(2)}%) | E(X) = ${res.mu.toFixed(2)}</span>`;
+};
+
+App.calcMiniNegativeBinomial = function() {
+  const r = parseInt(document.getElementById('mini_nb_r').value);
+  const x = parseInt(document.getElementById('mini_nb_x').value);
+  const p = parseFloat(document.getElementById('mini_nb_p').value);
+  const res = Solvers.solveNegativeBinomial(r, p, x);
+  const out = document.getElementById('miniRes_negativeBinomial');
+  out.style.display = 'block';
+  out.innerHTML = `<span class="badge badge-success">P(X = ${x}) = ${res.prob.toFixed(5)} (${(res.prob * 100).toFixed(2)}%) | E(X) = ${res.mu.toFixed(2)}</span>`;
+};
+
+App.calcMiniHypergeometric = function() {
+  const N = parseInt(document.getElementById('mini_h_N').value);
+  const A = parseInt(document.getElementById('mini_h_A').value);
+  const n = parseInt(document.getElementById('mini_h_n').value);
+  const k = parseInt(document.getElementById('mini_h_k').value);
+  const res = Solvers.solveHypergeometric(N, A, n, k, 'eq');
+  const out = document.getElementById('miniRes_hypergeometric');
+  out.style.display = 'block';
+  out.innerHTML = `<span class="badge badge-success">P(X = ${k}) = ${res.prob.toFixed(4)} (${(res.prob * 100).toFixed(2)}%) | E(X) = ${res.mu.toFixed(2)}</span>`;
+};
+
+App.calcMiniPoisson = function() {
+  const lambda = parseFloat(document.getElementById('mini_poi_lambda').value);
+  const t = parseFloat(document.getElementById('mini_poi_t').value);
+  const k = parseInt(document.getElementById('mini_poi_k').value);
+  const res = Solvers.solvePoisson(lambda, t, k, 'eq');
+  const out = document.getElementById('miniRes_poisson');
+  out.style.display = 'block';
+  out.innerHTML = `<span class="badge badge-success">P(X = ${k}) = ${res.prob.toFixed(4)} (${(res.prob * 100).toFixed(2)}%) | μ = ${res.mu}</span>`;
+};
+
+App.calcMiniNormal = function() {
+  const mu = parseFloat(document.getElementById('mini_norm_mu').value);
+  const sigma = parseFloat(document.getElementById('mini_norm_sigma').value);
+  const x1 = parseFloat(document.getElementById('mini_norm_x1').value);
+  const x2 = parseFloat(document.getElementById('mini_norm_x2').value);
+  const res = Solvers.solveNormal(mu, sigma, x1, x2, 'between');
+  const out = document.getElementById('miniRes_normal');
+  out.style.display = 'block';
+  out.innerHTML = `<span class="badge badge-success">P(${x1} ≤ X ≤ ${x2}) = ${res.prob.toFixed(4)} (${(res.prob * 100).toFixed(2)}%) | z₁ = ${res.z1.toFixed(2)}, z₂ = ${res.z2.toFixed(2)}</span>`;
+};
+
+App.calcMiniUniform = function() {
+  const a = parseFloat(document.getElementById('mini_uni_a').value);
+  const b = parseFloat(document.getElementById('mini_uni_b').value);
+  const x1 = parseFloat(document.getElementById('mini_uni_x1').value);
+  const res = Solvers.solveUniformContinuous(a, b, x1, null, 'geq');
+  const out = document.getElementById('miniRes_uniformContinuous');
+  out.style.display = 'block';
+  out.innerHTML = `<span class="badge badge-success">P(X ≥ ${x1}) = ${res.prob.toFixed(4)} (${(res.prob * 100).toFixed(2)}%) | E(X) = ${res.mu.toFixed(2)}, σ = ${res.sigma.toFixed(3)}</span>`;
+};
+
+App.calcMiniGamma = function() {
+  const alpha = parseFloat(document.getElementById('mini_gam_alpha').value);
+  const beta = parseFloat(document.getElementById('mini_gam_beta').value);
+  const t1 = parseFloat(document.getElementById('mini_gam_t1').value);
+  const res = Solvers.solveGamma(alpha, beta, t1, null, 'leq');
+  const out = document.getElementById('miniRes_gamma');
+  out.style.display = 'block';
+  out.innerHTML = `<span class="badge badge-success">P(Y ≤ ${t1}) = ${res.prob.toFixed(4)} (${(res.prob * 100).toFixed(2)}%) | E(Y) = ${res.mu.toFixed(2)} seg</span>`;
+};
+
+// Make sure init() calls initDistGuide()
+const origInit = App.init;
+App.init = function() {
+  origInit.call(this);
+  this.initDistGuide();
+};
+

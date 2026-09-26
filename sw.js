@@ -1,9 +1,10 @@
-const CACHE_NAME = 'probabilidad-unju-v1';
+const CACHE_NAME = 'probabilidad-unju-v2';
 const ASSETS = [
   './',
   './index.html',
   './css/styles.css',
   './js/math-utils.js',
+  './js/dist-guide-data.js',
   './js/theory-data.js',
   './js/exam-data.js',
   './js/solvers.js',
