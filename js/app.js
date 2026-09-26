@@ -16,6 +16,7 @@ const App = {
     this.updateViewModeUI();
     this.selectDist('binomial');
     this.renderExams();
+    if (window.TablesModule) TablesModule.init();
     this.bindEvents();
     this.renderMath();
     console.log("App Probabilidad 2025 initialized.");
@@ -168,6 +169,10 @@ const App = {
     document.querySelectorAll('.bottom-nav .bottom-nav-item').forEach(el => {
       el.classList.toggle('active', el.dataset.tab === tabId);
     });
+
+    if (tabId === 'tables' && window.TablesModule) {
+      TablesModule.render();
+    }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setTimeout(() => this.renderMath(), 50);

@@ -18,7 +18,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
   
-  <link rel="stylesheet" href="css/styles.css?v=20260926_8">
+  <link rel="stylesheet" href="css/styles.css?v=20260926_9">
   
   <script>
     // Force unregister all service workers and wipe all caches
@@ -46,10 +46,11 @@
       </div>
     </div>
 
-    <!-- Desktop Navigation: EXACTLY TWO TABS -->
+    <!-- Desktop Navigation: 3 TABS -->
     <nav class="desktop-nav">
       <a class="nav-link active" data-tab="calculator" onclick="App.navigateTo('calculator')">🧮 Calculadora & Hoja de Examen</a>
       <a class="nav-link" data-tab="exams" onclick="App.navigateTo('exams')">📝 Parciales 2025 Resueltos</a>
+      <a class="nav-link" data-tab="tables" onclick="App.navigateTo('tables')">📑 Tablas & Fórmulas TP3-TP4</a>
     </nav>
 
     <!-- Header Actions -->
@@ -143,6 +144,15 @@
 
     </section>
 
+    <!-- ============================================================
+         PESTAÑA 3: TABLAS Y FÓRMULAS TP3 Y TP4
+         ============================================================ -->
+    <section id="tab-tables" class="tab-content">
+      <div id="tablesModuleContainer">
+        <!-- Rendered by TablesModule in js/tables-data.js -->
+      </div>
+    </section>
+
   </main>
 
   <!-- Floating Camera FAB Button for Quick Urgencies -->
@@ -151,15 +161,19 @@
     <span>Cámara Parcial</span>
   </button>
 
-  <!-- Mobile Bottom Tab Navigation: EXACTLY TWO TABS -->
+  <!-- Mobile Bottom Tab Navigation -->
   <nav class="bottom-nav">
     <a class="bottom-nav-item active" data-tab="calculator" onclick="App.navigateTo('calculator')">
       <span class="nav-icon">🧮</span>
-      <span>Calculadora & Hoja</span>
+      <span>Calculadora</span>
     </a>
     <a class="bottom-nav-item" data-tab="exams" onclick="App.navigateTo('exams')">
       <span class="nav-icon">📝</span>
       <span>Parciales 2025</span>
+    </a>
+    <a class="bottom-nav-item" data-tab="tables" onclick="App.navigateTo('tables')">
+      <span class="nav-icon">📑</span>
+      <span>Tablas & Fórmulas</span>
     </a>
   </nav>
 
@@ -236,9 +250,10 @@
   </div>
 
   <!-- Application Scripts with cache-busting -->
-  <script src="js/math-utils.js?v=20260926_8"></script>
-  <script src="js/solvers.js?v=20260926_8"></script>
-  <script src="js/exam-data.js?v=20260926_8"></script>
-  <script src="js/app.js?v=20260926_8"></script>
+  <script src="js/math-utils.js?v=20260926_9"></script>
+  <script src="js/solvers.js?v=20260926_9"></script>
+  <script src="js/exam-data.js?v=20260926_9"></script>
+  <script src="js/tables-data.js?v=20260926_9"></script>
+  <script src="js/app.js?v=20260926_9"></script>
 </body>
 </html>
